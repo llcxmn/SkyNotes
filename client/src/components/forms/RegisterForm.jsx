@@ -1,7 +1,9 @@
-import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash} from 'react-icons/fa';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useState } from "react";
+import { toast } from "react-toastify";
+
 
 export default function RegisterForm({ onSwitchForm }) {
   const [email, setEmail] = useState("");
@@ -11,11 +13,14 @@ export default function RegisterForm({ onSwitchForm }) {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      alert("Register berhasil!");
+      toast.success("Register berhasil! Silahkan login.")
+      onSwitchForm();
     } catch (err) {
-      alert("Gagal register: " + err.message);
+      toast.error("Register gagal: " + err.message);
     }
   };  
+
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div
@@ -39,7 +44,7 @@ export default function RegisterForm({ onSwitchForm }) {
                 placeholder="Enter Your username"
                 className="flex-1 bg-transparent placeholder-gray-400 text-lg focus:outline-none"
               />
-              <FaUser className="text-gray-500" />
+              <FaUser className="text-black" />
             </div>
           </div>
 
@@ -54,7 +59,7 @@ export default function RegisterForm({ onSwitchForm }) {
                 onChange={(e) => setEmail(e.target.value)}
                 className="flex-1 bg-transparent placeholder-gray-400 text-lg focus:outline-none"
               />
-              <FaEnvelope className="text-gray-500" />
+              <FaEnvelope className="text-black" />
             </div>
           </div>
 
@@ -63,13 +68,20 @@ export default function RegisterForm({ onSwitchForm }) {
             <label className="text-lg font-semibold text-black">Password</label>
             <div className="flex items-center border-b border-gray-400 py-2">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="flex-1 bg-transparent placeholder-gray-400 text-lg focus:outline-none"
               />
-              <FaLock className="text-gray-500" />
+              <button type='button' onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? (
+                  <FaEyeSlash className='text-black'/>
+                ) : (
+                  <FaEye className='text-black'/>
+                )
+                }
+              </button>
             </div>
           </div>
 
