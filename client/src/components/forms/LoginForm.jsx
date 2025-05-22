@@ -1,34 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 
-
 export default function LoginForm({ onSwitchForm }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [bgImage, setBgImage] = useState("/images/cloud-bg.png");
+  const navigate = useNavigate();
 
+  // ✅ Responsive background image
+  useEffect(() => {
+    const updateBg = () => {
+      setBgImage(
+        window.innerWidth < 768
+          ? "/images/cloud-bg-mobile.png"
+          : "/images/cloud-bg.png"
+      );
+    };
+    updateBg(); // Set background saat pertama kali load
+    window.addEventListener("resize", updateBg);
+    return () => window.removeEventListener("resize", updateBg);
+  }, []);
+
+  // ✅ Handle Login
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-     await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       toast.success("Login berhasil!");
       navigate("/dashboard");
     } catch (err) {
-     toast.error("Login gagal: " + err.message);
-   }
+      toast.error("Login gagal: " + err.message);
+    }
   };
-
-  const navigate = useNavigate();
-
-  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div
-      style={{ backgroundImage: "url('/images/cloud-bg.png')" }}
-      className="w-full md:w-3/5 bg-cover bg-center bg-blue-600 flex flex-col justify-center items-center px-6 md:px-12 py-10 min-h-screen"
+      style={{ backgroundImage: `url(${bgImage})` }}
+      className="w-full md:w-3/5 bg-cover bg-center bg-no-repeat bg-blue-600 flex flex-col justify-center items-center px-6 md:px-12 py-10 min-h-screen"
     >
       <div className="w-full max-w-md md:ml-64">
         <h2 className="text-2xl font-bold text-black mb-1">Hi Skyper!</h2>
@@ -64,13 +77,12 @@ export default function LoginForm({ onSwitchForm }) {
                 onChange={(e) => setPassword(e.target.value)}
                 className="flex-1 bg-transparent placeholder-gray-400 text-lg focus:outline-none"
               />
-              <button type='button' onClick={() => setShowPassword(!showPassword)}>
+              <button type="button" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? (
-                  <FaEyeSlash className='text-black'/>
+                  <FaEyeSlash className="text-black" />
                 ) : (
-                  <FaEye className='text-black'/>
-                )
-                }
+                  <FaEye className="text-black" />
+                )}
               </button>
             </div>
           </div>
