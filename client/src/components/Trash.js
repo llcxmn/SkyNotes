@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faEllipsisV, faTrashRestore, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const Trash = () => {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [sortBy, setSortBy] = React.useState('lastViewed');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('lastViewed');
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const navigate = useNavigate();
 
-  // Simulasi notes yang dihapus
-  const trashNotes = [
+  const [trashNotes, setTrashNotes] = useState([
     {
       id: 1,
       title: 'Deleted Note A',
@@ -20,23 +22,31 @@ const Trash = () => {
       lastViewed: new Date(2025, 4, 18, 14, 30),
       image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
     },
-  ];
+  ]);
 
   const filtered = trashNotes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sorted = filtered.sort((a, b) => {
-    if (sortBy === 'name') {
-      return a.title.localeCompare(b.title);
-    } else {
-      return b.lastViewed - a.lastViewed;
-    }
+    if (sortBy === 'name') return a.title.localeCompare(b.title);
+    return b.lastViewed - a.lastViewed;
   });
+
+  const handleRestore = (id) => {
+    alert(`Pulihkan catatan dengan ID: ${id}`);
+    // Implementasi logika pemulihan catatan
+  };
+
+  const handleDelete = (id) => {
+    const confirmDelete = window.confirm('Yakin ingin menghapus permanen catatan ini?');
+    if (confirmDelete) {
+      setTrashNotes(prev => prev.filter(note => note.id !== id));
+    }
+  };
 
   return (
     <section className="flex-1 flex flex-col gap-4 mt-8 md:mt-0 px-4 md:px-8 min-h-screen">
-
       {/* Search Bar */}
       <div className="flex justify-end">
         <div className="flex items-center bg-white rounded-md px-4 py-2 w-full md:w-64">
@@ -73,16 +83,50 @@ const Trash = () => {
       {/* Notes List */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
         {sorted.map(note => (
-          <div key={note.id} className="flex flex-col space-y-2 select-none cursor-default">
+          <div key={note.id} className="relative group flex flex-col space-y-2 select-none cursor-default">
             <img
               alt={note.title}
-              className="rounded-lg aspect-square object-cover"
+              className="rounded-lg aspect-square object-cover cursor-pointer"
               src={note.image}
+              onClick={() => navigate(`/notespage/${note.id}`)}
             />
-            <span className="text-white font-medium text-sm md:text-base">{note.title}</span>
+            <span
+              className="text-white font-medium text-sm md:text-base cursor-pointer"
+              onClick={() => navigate(`/notespage/${note.id}`)}
+            >
+              {note.title}
+            </span>
             <span className="text-white text-xs md:text-sm font-light">
               Dihapus {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam lalu
             </span>
+
+            {/* Titik tiga */}
+            <div
+              className="absolute top-2 right-2 bg-white rounded-full p-2 cursor-pointer group-hover:opacity-100 opacity-0 transition"
+              onClick={() => setMenuOpenId(menuOpenId === note.id ? null : note.id)}
+            >
+              <FontAwesomeIcon icon={faEllipsisV} className="text-gray-800 w-4 h-4" />
+            </div>
+
+            {/* Menu */}
+            {menuOpenId === note.id && (
+              <div className="absolute top-10 right-2 bg-white rounded-md shadow-lg z-10 w-40">
+                <button
+                  className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => handleRestore(note.id)}
+                >
+                  <FontAwesomeIcon icon={faTrashRestore} className="w-4 h-4" />
+                  Pulihkan
+                </button>
+                <button
+                  className="flex items-center gap-3 w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+                  onClick={() => handleDelete(note.id)}
+                >
+                  <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
+                  Hapus Permanen
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

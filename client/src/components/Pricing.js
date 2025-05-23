@@ -1,4 +1,3 @@
-// src/pages/Pricing.js
 import React from 'react';
 
 const Pricing = () => {

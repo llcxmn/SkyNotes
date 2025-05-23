@@ -16,7 +16,7 @@ const currentUser = {
   status: "Free",
 };
 
-const NotesPage = ({ readOnly = false, initialNotes }) => {
+const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
   const [notes, setNotes] = useState(initialNotes || {});
   const [title, setTitle] = useState("Untitled");
   const [wordCount, setWordCount] = useState(0);
@@ -361,4 +361,4 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
   );
 };
 
-export default NotesPage;
+export default NotesPageCollaboration;

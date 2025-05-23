@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ContentLayout from '../components/ContentLayout'; // pastikan path-nya sesuai
+import ContentLayout from '../components/ContentLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import NoteMenu from './NoteMenu';
+import NoteDetail from './NoteDetail';
+import NoteShare from './NoteShare';
 
 const Collaboration = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('lastViewed');
+
+  const [selectedCollab, setSelectedCollab] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const collabData = [
     {
@@ -69,15 +76,25 @@ const Collaboration = () => {
         {sorted.map((collab) => (
           <div
             key={collab.id}
-            onClick={() => navigate('/notes')}
-            className="flex flex-col space-y-2 cursor-pointer select-none"
+            className="relative flex flex-col space-y-2 cursor-pointer select-none"
           >
-            <div className="bg-white rounded-lg aspect-square grid grid-cols-2 grid-rows-2 gap-1 p-2 shadow-xl">
+            <div
+              className="bg-white rounded-lg aspect-square grid grid-cols-2 grid-rows-2 gap-1 p-2 shadow-xl"
+              onClick={() => {
+                // Navigate ke halaman NotesPageCollaboration bawa data collab
+                navigate('/notespagecollaboration', { state: { collaboration: collab } });
+              }}
+            >
               {collab.previews.map((p, i) => (
                 <div
                   key={i}
-                  className={`rounded-md flex items-center justify-center ${p.color || ''
-                    } ${p.isLines ? 'bg-[url("https://www.transparenttextures.com/patterns/lined-paper.png")] bg-cover' : ''}`}
+                  className={`rounded-md flex items-center justify-center ${
+                    p.color || ''
+                  } ${
+                    p.isLines
+                      ? 'bg-[url("https://www.transparenttextures.com/patterns/lined-paper.png")] bg-cover'
+                      : ''
+                  }`}
                 >
                   {p.isPlus && (
                     <FontAwesomeIcon icon={faPlus} className="text-black w-4 h-4" />
@@ -89,22 +106,41 @@ const Collaboration = () => {
             <span className="text-white text-xs md:text-sm font-light select-text">
               {collab.owner} – {collab.notesCount} notes
             </span>
+
+            {/* Menu */}
+            <div className="absolute top-1 right-1">
+              <NoteMenu
+                onDelete={() => console.log(`Delete collab ${collab.id}`)}
+                onDetail={() => {
+                  setSelectedCollab(collab);
+                  setShowDetail(true);
+                }}
+                onShare={() => setShowShare(true)}
+              />
+            </div>
           </div>
         ))}
 
         {/* Add Collaboration Box */}
-        {/* Add Collaboration Box */}
         <div
-          onClick={() => alert('Add new collaboration')}
+          onClick={() => {
+            // Bisa kamu ubah jadi navigate ke halaman add collaboration kalau ada
+            alert('Add new collaboration');
+          }}
           className="flex flex-col space-y-2 cursor-pointer select-none"
         >
           <div className="bg-white rounded-lg aspect-square flex items-center justify-center shadow-xl">
             <FontAwesomeIcon icon={faPlus} className="text-blue-700 w-10 h-10" />
           </div>
-          <span className="text-white font-medium text-sm md:text-base text-center">Add collaboration</span>
+          <span className="text-white font-medium text-sm md:text-base text-center">
+            Add collaboration
+          </span>
         </div>
-
       </div>
+
+      {/* Modals */}
+      {showDetail && <NoteDetail note={selectedCollab} onClose={() => setShowDetail(false)} />}
+      {showShare && <NoteShare onClose={() => setShowShare(false)} />}
     </ContentLayout>
   );
 };

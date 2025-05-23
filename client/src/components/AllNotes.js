@@ -2,11 +2,18 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSearch } from '@fortawesome/free-solid-svg-icons';
+import NoteMenu from './NoteMenu';
+import NoteDetail from './NoteDetail';
+import NoteShare from './NoteShare';
 
 const AllNotes = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortBy, setSortBy] = React.useState('lastViewed');
+
+  const [selectedNote, setSelectedNote] = React.useState(null);
+  const [showDetail, setShowDetail] = React.useState(false);
+  const [showShare, setShowShare] = React.useState(false);
 
   const notesData = [
     {
@@ -91,9 +98,10 @@ const AllNotes = () => {
 
       {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+
         {/* Add Notes Box */}
         <div
-          onClick={() => navigate('/notes')}
+          onClick={() => navigate('/notespage')}
           className="flex flex-col space-y-2 cursor-pointer select-none"
         >
           <div className="bg-white rounded-lg aspect-square flex items-center justify-center">
@@ -106,21 +114,36 @@ const AllNotes = () => {
         {sortedNotes.map((note) => (
           <div
             key={note.id}
-            onClick={() => navigate('/notes')}
-            className="flex flex-col space-y-2 cursor-pointer select-none"
+            className="relative flex flex-col space-y-2 cursor-pointer select-none"
           >
-            <img
-              alt={note.title}
-              className="rounded-lg aspect-square object-cover"
-              src={note.image}
-            />
+            <div
+              className="relative"
+              onClick={() => navigate('/notespage')}
+            >
+              <img
+                alt={note.title}
+                className="rounded-lg aspect-square object-cover"
+                src={note.image}
+              />
+            </div>
             <span className="text-white font-medium text-sm md:text-base">{note.title}</span>
             <span className="text-white text-xs md:text-sm font-light select-text">
               Iwan Manjul - {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam
             </span>
+            <div className="absolute top-1 right-1">
+              <NoteMenu
+                onDelete={() => console.log(`Delete note ${note.id}`)}
+                onDetail={() => { setSelectedNote(note); setShowDetail(true); }}
+                onShare={() => setShowShare(true)}
+              />
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Modals */}
+      {showDetail && <NoteDetail note={selectedNote} onClose={() => setShowDetail(false)} />}
+      {showShare && <NoteShare onClose={() => setShowShare(false)} />}
     </section>
   );
 };

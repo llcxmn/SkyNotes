@@ -9,8 +9,8 @@ import NotesPage from './components/NotesPage';
 import Trash from './components/Trash';
 import AllNotes from './components/AllNotes';
 import Collaboration from './components/Collaboration';
-import PersonalInformation from './components/PersonalInformation';
-import MainLayout from './components/MainLayout';  // import layout baru
+import MainLayout from './components/MainLayout';
+import NotesPageCollaboration from './components/NotesPageCollaboration';
 
 const App = () => {
   return (
@@ -18,7 +18,7 @@ const App = () => {
       <div className="bg-white m-0 p-0 min-h-screen">
         <Navbar />
         <Routes>
-          {/* Semua route yang mau sidebar dan bg biru bungkus di MainLayout */}
+          {/* Semua route dengan layout Navbar + Sidebar */}
           <Route
             path="/"
             element={
@@ -43,7 +43,6 @@ const App = () => {
               </MainLayout>
             }
           />
-
           <Route
             path="/collaboration"
             element={
@@ -51,7 +50,20 @@ const App = () => {
                 <Collaboration />
               </MainLayout>
             }
-          /> 
+          />
+          <Route
+            path="/notespage"
+            element={
+                <NotesPage />
+            }
+          />
+          <Route
+            path="/notespagecollaboration"
+            element={
+                <NotesPageCollaboration />
+            }
+          />
+          {/* Route tanpa sidebar/layout khusus */}
           <Route path="/pricing" element={<div className="text-white p-10">Pricing Page</div>} />
           <Route path="/contact" element={<Contact />} />
         </Routes>

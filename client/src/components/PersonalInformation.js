@@ -1,4 +1,3 @@
-// src/pages/PersonalInformation.jsx
 import React from 'react';
 
 const PersonalInformation = () => {
