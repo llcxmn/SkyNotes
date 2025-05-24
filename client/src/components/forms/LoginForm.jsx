@@ -12,7 +12,6 @@ export default function LoginForm({ onSwitchForm }) {
   const [bgImage, setBgImage] = useState("/images/cloud-bg.png");
   const navigate = useNavigate();
 
-  // ✅ Responsive background image
   useEffect(() => {
     const updateBg = () => {
       setBgImage(
@@ -26,7 +25,6 @@ export default function LoginForm({ onSwitchForm }) {
     return () => window.removeEventListener("resize", updateBg);
   }, []);
 
-  // ✅ Handle Login
   const handleLogin = async (e) => {
     e.preventDefault();
     try {

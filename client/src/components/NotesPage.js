@@ -10,7 +10,7 @@ import {
   faPencilAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
-
+import { io } from 'socket.io-client'; 
 const currentUser = {
   name: "John Doe",
   status: "Free",
@@ -24,7 +24,60 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
   const [emails, setEmails] = useState('');
   const [themeColor, setThemeColor] = useState("#fc4e4e");
   const [showNewNote, setShowNewNote] = useState(false);
+    // Add socket ref
+  const socketRef = useRef(null);
 
+  // Initialize socket connection
+  useEffect(() => {
+    // Connect to Socket.IO server
+    socketRef.current = io('http://localhost:3001', {
+      withCredentials: true,
+      transports: ['websocket']
+    });
+
+    // Connection handlers
+    socketRef.current.on('connect', () => {
+      console.log('Connected to Socket.IO server');
+    });
+
+    socketRef.current.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server');
+    });
+
+    // Clean up on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Add real-time collaboration features
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    // Listen for note updates from other clients
+    socketRef.current.on('note-updated', (updatedNote) => {
+      setNotes(prev => ({
+        ...prev,
+        [updatedNote.id]: updatedNote.content
+      }));
+    });
+
+    // Listen for new notes from other clients
+    socketRef.current.on('note-added', (newNote) => {
+      setNotes(prev => ({
+        ...prev,
+        [newNote.id]: newNote.content
+      }));
+    });
+
+    // Listen for chat messages
+    socketRef.current.on('new-chat-message', (message) => {
+      setChatMessages(prev => [...prev, message]);
+    });
+
+  }, []);
   // Chat state
   const [isChatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
@@ -49,6 +102,14 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
     if (readOnly) return;
     const text = e.target.innerText || '';
     setNotes(prev => ({ ...prev, [key]: text }));
+    
+    // Emit the update to other clients
+    if (socketRef.current) {
+      socketRef.current.emit('update-note', {
+        id: key,
+        content: text
+      });
+    }
   };
 
   // Simulasi save: update state, bisa dikembangkan ke backend
@@ -92,6 +153,14 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
     const newKey = 'note' + Date.now();
     setNotes(prev => ({ ...prev, [newKey]: '' }));
     setShowNewNote(true);
+    
+    // Emit the new note to other clients
+    if (socketRef.current) {
+      socketRef.current.emit('add-note', {
+        id: newKey,
+        content: ''
+      });
+    }
   };
 
   // Toggle mode T

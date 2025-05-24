@@ -1,6 +1,5 @@
 import { NavLink } from "react-router-dom";
 
-
 function NavBar() {
     return (
         <>
@@ -30,16 +29,17 @@ function NavBar() {
                         </div>
 
                         {/* .content .login-signup */}
-                        <div className="flex items-center mr-8"> {/* Added items-center for button vertical alignment */}
-                            {/* .content .login-signup .login-button */}
+                        <div className="flex items-center mr-8">
                             <NavLink
                                 to="/auth"
+                                state={{ form: 'login' }}
                                 className="px-4 py-0.5 ml-[0.4em] mt-[0.1em] bg-transparent border border-white rounded-[10px] text-white font-bold hover:bg-white hover:text-black cursor-pointer"
                             >
                                 Login
                             </NavLink>
                             <NavLink
-                                to="/auth?form=register"
+                                to="/auth"
+                                state={{ form: 'register' }}
                                 className="px-4 py-0.5 ml-[0.4em] mt-[0.1em] bg-transparent border border-white rounded-[10px] text-white font-bold hover:bg-white hover:text-black cursor-pointer"
                             >
                                 Sign Up
@@ -57,7 +57,7 @@ function NavBar() {
                         {/* .yellow-navbar .price (div className="price" was implicit) */}
                         <div>
                              {/* .yellow-navbar .price .priceoffer-button */}
-                            <button className="mt-1 bg-transparent border border-black rounded-[13px] text-black mb-1.5 text-[12.71px] font-bold px-3 py-1 hover:bg-black hover:text-white cursor-pointer"> {/* Added some padding px-3 py-1 for better appearance */}
+                            <button className="mt-1 bg-transparent border border-black rounded-[13px] text-black mb-1.5 text-[12.71px] font-bold px-3 py-1 hover:bg-black hover:text-white cursor-pointer">
                                 View plans and pricing
                             </button>
                         </div>
