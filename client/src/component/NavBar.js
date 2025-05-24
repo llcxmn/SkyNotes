@@ -23,7 +23,7 @@ function NavBar() {
                                 Pricing
                             </NavLink>
                             <NavLink
-                                to="/" 
+                                to="/contact" 
                                 className="block px-4 py-[14px] text-center text-white no-underline hover:bg-blue-400">
                                 Contact
                             </NavLink>
