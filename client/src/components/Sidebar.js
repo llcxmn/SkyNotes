@@ -23,7 +23,7 @@ const Sidebar = () => {
           <p className="text-sm font-normal">Welcome to SkyNotes!</p>
         </div>
         <div className="space-y-4 w-full">
-          <NavLink to="/" end className={({ isActive }) => (isActive ? activeClass : inactiveClass)}>
+          <NavLink to="/dashboard" end className={({ isActive }) => (isActive ? activeClass : inactiveClass)}>
             <FontAwesomeIcon icon={faHistory} />
             <span>Recently</span>
           </NavLink>

@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 
+
 function NavBar() {
     return (
         <>
@@ -31,13 +32,18 @@ function NavBar() {
                         {/* .content .login-signup */}
                         <div className="flex items-center mr-8"> {/* Added items-center for button vertical alignment */}
                             {/* .content .login-signup .login-button */}
-                            <button className="px-4 py-0.5 ml-[0.4em] mt-[0.1em] bg-transparent border border-white rounded-[10px] text-white font-bold hover:bg-white hover:text-black cursor-pointer">
+                            <NavLink
+                                to="/auth"
+                                className="px-4 py-0.5 ml-[0.4em] mt-[0.1em] bg-transparent border border-white rounded-[10px] text-white font-bold hover:bg-white hover:text-black cursor-pointer"
+                            >
                                 Login
-                            </button>
-                            {/* .content .login-signup .signup-button */}
-                            <button className="px-4 py-0.5 ml-[0.4em] mt-[0.1em] bg-transparent border border-white rounded-[10px] text-white font-bold hover:bg-white hover:text-black cursor-pointer">
+                            </NavLink>
+                            <NavLink
+                                to="/auth?form=register"
+                                className="px-4 py-0.5 ml-[0.4em] mt-[0.1em] bg-transparent border border-white rounded-[10px] text-white font-bold hover:bg-white hover:text-black cursor-pointer"
+                            >
                                 Sign Up
-                            </button>
+                            </NavLink>
                         </div>
                     </div>
                 </nav>

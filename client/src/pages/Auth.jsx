@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+
 import LayoutAuth from "../components/LayoutAuth";
 import LoginForm from "../components/forms/LoginForm";
 import RegisterForm from "../components/forms/RegisterForm";
 
 export default function AuthPage() {
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
 
-  const handleToggle = () => {
-  setIsLogin(!isLogin);
-    };
+  useEffect(() => {
+    const formType = searchParams.get("form");
+    if (formType === "register") {
+      setIsLogin(false);
+    } else {
+      setIsLogin(true);
+    }
+  }, [searchParams]);
 
+  const handleToggle = () => {
+    setIsLogin(!isLogin);
+  };
 
   return (
     <LayoutAuth>
