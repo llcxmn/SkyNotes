@@ -1,12 +1,14 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useAuth } from '../contexts/AuthContext';
 import {
   faHistory,
   faTrash,
   faTableCellsLarge,
   faFolder,
   faEdit,
+  faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 
 const Sidebar = () => {
@@ -14,7 +16,12 @@ const Sidebar = () => {
     "text-yellow-400 border-b border-gray-400 pb-2 w-full flex items-center space-x-2";
   const inactiveClass =
     "text-white hover:text-yellow-400 border-b border-gray-400 pb-2 w-full flex items-center space-x-2";
-
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth");
+  };
   return (
     <aside className="flex flex-col space-y-6 md:w-1/6 text-white select-none gap-[130px]">
       <nav className="flex flex-col space-y-3 font-semibold text-lg">
@@ -42,6 +49,14 @@ const Sidebar = () => {
             <FontAwesomeIcon icon={faFolder} />
             <span>Collaboration</span>
           </NavLink>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-2 text-white hover:text-yellow-400 border-b border-gray-400 pb-2 bg-transparent"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+          >
+            <FontAwesomeIcon icon={faRightFromBracket} />
+            <span>Log Out</span>
+          </button>
         </div>
       </nav>
 

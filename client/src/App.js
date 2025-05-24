@@ -21,66 +21,86 @@ import AllNotes from './components/AllNotes';
 import Collaboration from './components/Collaboration';
 import MainLayout from './components/MainLayout';
 import NotesPageCollaboration from './components/NotesPageCollaboration';
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from './components/ProtectedRoute'; 
 
 const App = () => {
   return (
-    <Router>
-      <ToastContainer position="top-right" autoClose={3000} />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/pricing" element={<LanggananPage />} />
-        
-        {/* Auth Routes */}
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/profile" element={<UserProfile />} />
+    <AuthProvider>
+      <Router>
+        <ToastContainer position="top-right" autoClose={3000} />
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/pricing" element={<LanggananPage />} />
 
-        {/* Main Layout Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/trash"
-          element={
-            <MainLayout>
-              <Trash />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/allnotes"
-          element={
-            <MainLayout>
-              <AllNotes />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/collaboration"
-          element={
-            <MainLayout>
-              <Collaboration />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/notespage"
-          element={<NotesPage />}
-        />
-        <Route
-          path="/notespagecollaboration"
-          element={<NotesPageCollaboration />}
-        />
-        
-        {/* Other Routes */}
-        <Route path="/contact" element={<Contact />} />
-      </Routes>
-    </Router>
+          {/* Auth Routes */}
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/profile" element={<UserProfile />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trash"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Trash />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/allnotes"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <AllNotes />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/collaboration"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Collaboration />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notespage"
+            element={
+              <ProtectedRoute>
+                <NotesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notespagecollaboration"
+            element={
+              <ProtectedRoute>
+                <NotesPageCollaboration />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Other Routes */}
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 
