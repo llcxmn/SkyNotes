@@ -22,7 +22,7 @@ function NavBar() {
                                 Pricing
                             </NavLink>
                             <NavLink
-                                to="/" 
+                                to="/contact" 
                                 className="block px-4 py-[14px] text-center text-white no-underline hover:bg-blue-400">
                                 Contact
                             </NavLink>
@@ -57,7 +57,7 @@ function NavBar() {
                         {/* .yellow-navbar .price (div className="price" was implicit) */}
                         <div>
                              {/* .yellow-navbar .price .priceoffer-button */}
-                            <button className="mt-1 bg-transparent border border-black rounded-[13px] text-black mb-1.5 text-[12.71px] font-bold px-3 py-1 hover:bg-black hover:text-white cursor-pointer"> {/* Added some padding px-3 py-1 for better appearance */}
+                            <button className="mt-1 bg-transparent border border-black rounded-[13px] text-black mb-1.5 text-[12.71px] font-bold px-3 py-1 hover:bg-black hover:text-white cursor-pointer">
                                 View plans and pricing
                             </button>
                         </div>
