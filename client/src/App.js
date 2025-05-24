@@ -1,5 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Auth-related pages
+import AuthPage from './pages/Auth';
+import UserProfile from './pages/UserProfile';
+
+// Main layout components
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -15,12 +23,21 @@ import NotesPageCollaboration from './components/NotesPageCollaboration';
 const App = () => {
   return (
     <Router>
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className="bg-white m-0 p-0 min-h-screen">
         <Navbar />
         <Routes>
-          {/* Semua route dengan layout Navbar + Sidebar */}
+          {/* Auth Routes */}
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/profile" element={<UserProfile />} />
+
+          {/* Main Layout Routes */}
           <Route
             path="/"
+            element={<Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/dashboard"
             element={
               <MainLayout>
                 <Dashboard />
@@ -53,18 +70,15 @@ const App = () => {
           />
           <Route
             path="/notespage"
-            element={
-                <NotesPage />
-            }
+            element={<NotesPage />}
           />
           <Route
             path="/notespagecollaboration"
-            element={
-                <NotesPageCollaboration />
-            }
+            element={<NotesPageCollaboration />}
           />
-          {/* Route tanpa sidebar/layout khusus */}
-          <Route path="/pricing" element={<div className="text-white p-10">Pricing Page</div>} />
+          
+          {/* Other Routes */}
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/contact" element={<Contact />} />
         </Routes>
       </div>
