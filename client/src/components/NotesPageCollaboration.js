@@ -10,6 +10,7 @@ import {
   faPencilAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
+import { io } from 'socket.io-client';  
 
 const currentUser = {
   name: "John Doe",

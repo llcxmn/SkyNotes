@@ -1,4 +1,6 @@
 import React from 'react';
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -8,8 +10,20 @@ import {
   faFolder,
   faEdit,
 } from '@fortawesome/free-solid-svg-icons';
-
+import {auth} from '../firebase'; 
 const Sidebar = () => {
+   const [displayName, setDisplayName] = useState("");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setDisplayName(user.displayName || "User"); // fallback if no name
+      }
+    });
+
+    return () => unsubscribe(); 
+  }, []);
+
   const activeClass =
     "text-yellow-400 border-b border-gray-400 pb-2 w-full flex items-center space-x-2";
   const inactiveClass =
@@ -19,7 +33,7 @@ const Sidebar = () => {
     <aside className="flex flex-col space-y-6 md:w-1/6 text-white select-none gap-[130px]">
       <nav className="flex flex-col space-y-3 font-semibold text-lg">
         <div className="mb-4">
-          <h2 className="text-2xl font-bold mb-1">Hi, Iwan Manjul</h2>
+          <h2 className="text-2xl font-bold mb-1">Hi, {displayName}</h2>
           <p className="text-sm font-normal">Welcome to SkyNotes!</p>
         </div>
         <div className="space-y-4 w-full">
