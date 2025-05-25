@@ -266,7 +266,7 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
 
       <div className="flex justify-center items-start mt-20 gap-8">
         {/* Left (Top Bar) */}
-        <div className="flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-6 py-3 space-x-4 h-fit">
+        <div className="flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-6 py-3 space-x-4 h-fit sticky top-20">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -281,6 +281,7 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
         </div>
 
         {/* Middle (Note Area - A4) */}
+        <div className="mt-20">
         <div
           ref={noteAreaRef}
           className="relative w-[650px] h-[800px] shadow-lg rounded"
@@ -316,15 +317,16 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
           {!showNewNote && !readOnly && (
             <button
               onClick={handleAddNote}
-              className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl shadow-md hover:bg-yellow-400 transition"
+              className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl shadow-md hover:bg-yellow-400 transition z-50"
             >
               + Add Note (T)
             </button>
           )}
         </div>
+        </div>
 
         {/* Right (Toolbar) */}
-        <div className="flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-4 py-2 space-x-3 h-fit">
+        <div className="flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-6 py-3 space-x-4 h-fit sticky top-20">
           <span className="text-sm font-semibold max-w-xs truncate">{currentUser.name}</span>
           <button onClick={handleSave} className="p-2 hover:bg-gray-100 rounded-md" title="Save">
             <FontAwesomeIcon icon={faSave} />
