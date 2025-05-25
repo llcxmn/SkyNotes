@@ -1,29 +1,43 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import NoteMenu from './NoteMenu';
 import NoteDetail from './NoteDetail';
 import NoteShare from './NoteShare';
+import {auth} from '../firebase'; 
 
 const Recently = ({ searchTerm, sortBy }) => {
   const navigate = useNavigate();
+  const [displayName, setDisplayName] = useState("");
+    
+      useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          if (user) {
+            setDisplayName(user.displayName || "User"); // fallback if no name
+          }
+        });
+    
+        return () => unsubscribe(); 
+      }, []);
 
   // Simulasi data awal
   const initialNotes = [
     {
       id: 1,
-      title: 'Meeting notes',
+      title: 'Meeting notes ',
       lastViewed: new Date(2025, 4, 20, 10, 0),
       image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-      author: 'Iwan Manjul',
+      author: 'Iwan Manju',
     },
     {
       id: 2,
-      title: 'Project Plan',
+      title: 'Project Plan ',
       lastViewed: new Date(2025, 4, 19, 8, 30),
       image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-      author: 'Iwan Manjul',
+      author: displayName,
     },
   ];
 
@@ -91,7 +105,7 @@ const Recently = ({ searchTerm, sortBy }) => {
             />
             <span className="text-white font-medium text-sm md:text-base">{note.title}</span>
             <span className="text-white text-xs md:text-sm font-light select-text">
-              {note.author} - {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam
+              {displayName} - {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam
             </span>
           </div>
 
