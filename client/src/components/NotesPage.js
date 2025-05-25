@@ -11,7 +11,7 @@ import {
   faArrowsAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
-import { io } from 'socket.io-client'; 
+import { io } from 'socket.io-client';
 const currentUser = {
   name: "John Doe",
   status: "Free",
@@ -75,7 +75,7 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
   };
-    // Add socket ref
+  // Add socket ref
   const socketRef = useRef(null);
 
   // Initialize socket connection
@@ -153,7 +153,7 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
     if (readOnly) return;
     const text = e.target.innerText || '';
     setNotes(prev => ({ ...prev, [key]: text }));
-    
+
     // Emit the update to other clients
     if (socketRef.current) {
       socketRef.current.emit('update-note', {
@@ -264,87 +264,89 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
   return (
     <div className="relative min-h-screen font-sans">
 
-      {/* Top Bar */}
-      <div className="absolute top-6 left-10 flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-6 py-3 space-x-4">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={readOnly}
-          className="text-sm font-semibold outline-none bg-transparent max-w-xs"
-          placeholder="Untitled"
-        />
-        <span className={`text-xs font-semibold px-3 py-1 rounded-md ${currentUser.status === 'Premium' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
-          }`}>
-          {currentUser.status}
-        </span>
-      </div>
+      <div className="flex justify-center items-start mt-20 gap-8">
+        {/* Left (Top Bar) */}
+        <div className="flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-6 py-3 space-x-4 h-fit">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            disabled={readOnly}
+            className="text-sm font-semibold outline-none bg-transparent max-w-xs"
+            placeholder="Untitled"
+          />
+          <span className={`text-xs font-semibold px-3 py-1 rounded-md ${currentUser.status === 'Premium' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
+            }`}>
+            {currentUser.status}
+          </span>
+        </div>
 
-      {/* Right Toolbar */}
-      <div className="absolute top-6 right-10 flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-4 py-2 space-x-3">
-        <span className="text-sm font-semibold max-w-xs truncate">{currentUser.name}</span>
-        <button onClick={handleSave} className="p-2 hover:bg-gray-100 rounded-md" title="Save">
-          <FontAwesomeIcon icon={faSave} />
-        </button>
-        <button
-          onClick={() => setChatOpen(prev => !prev)}
-          className="p-2 hover:bg-gray-100 rounded-md"
-          title="Chat"
-          aria-expanded={isChatOpen}
-          aria-controls="chatbox"
+        {/* Middle (Note Area - A4) */}
+        <div
+          ref={noteAreaRef}
+          className="relative w-[650px] h-[800px] shadow-lg rounded"
+          style={{ backgroundColor: themeColor }}
         >
-          <FontAwesomeIcon icon={faComments} />
-        </button>
-        <button onClick={handleThemeChange} className="p-2 hover:bg-gray-100 rounded-md" title="Change Theme">
-          <FontAwesomeIcon icon={faShirt} />
-        </button>
-        <button onClick={() => setShareModalOpen(true)} className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition" title="Share">
-          <FontAwesomeIcon icon={faShareAlt} />
-        </button>
-      </div>
+          {Object.entries(notes).map(([key, val], i) => {
+            const pos = notePositions[key] || { top: 100 + i * 50, left: 100 + i * 50, w: '220px' };
+            return (
+              <div
+                key={key}
+                ref={el => {
+                  editableRefs.current[key] = el;
+                  if (el && (!el.isContentEditable || readOnly || moveMode)) {
+                    el.innerText = val || '';
+                  }
+                }}
+                contentEditable={!readOnly && !moveMode}
+                suppressContentEditableWarning
+                onInput={e => handleInputChange(e, key)}
+                spellCheck={false}
+                role="textbox"
+                aria-multiline="true"
+                dir="ltr"
+                className={`absolute text-black text-left font-bold p-3 border border-black rounded-md bg-red-600 shadow-md min-h-[100px]
+            ${moveMode ? 'cursor-move' : ''}
+            break-words whitespace-pre-wrap overflow-hidden`}
+                style={{ top: pos.top, left: pos.left, width: pos.w || '220px' }}
+                onMouseDown={moveMode ? (e => handleMouseDown(e, key)) : undefined}
+              />
+            );
+          })}
 
-      {/* Note Area - A4 Centered */}
-      <div
-        ref={noteAreaRef}
-        className="relative mx-auto mt-40 w-[650px] h-[800px] shadow-lg rounded"
-        style={{ backgroundColor: themeColor }}
-      >
-        {Object.entries(notes).map(([key, val], i) => {
-          const pos = notePositions[key] || { top: 100 + i * 50, left: 100 + i * 50, w: '220px' };
-          return (
-            <div
-              key={key}
-              ref={el => {
-                editableRefs.current[key] = el;
-                // Set content only if not editing (prevents cursor jump)
-                if (el && (!el.isContentEditable || readOnly || moveMode)) {
-                  el.innerText = val || '';
-                }
-              }}
-              contentEditable={!readOnly && !moveMode}
-              suppressContentEditableWarning
-              onInput={e => handleInputChange(e, key)}
-              spellCheck={false}
-              role="textbox"
-              aria-multiline="true"
-              dir="ltr"
-              className={`absolute text-black text-left font-bold p-3 border border-black rounded-md bg-red-600 shadow-md min-h-[100px]
-                ${moveMode ? 'cursor-move' : ''}
-                break-words whitespace-pre-wrap overflow-hidden`}
-              style={{ top: pos.top, left: pos.left, width: pos.w || '220px' }}
-              onMouseDown={moveMode ? (e => handleMouseDown(e, key)) : undefined}
-            />
-          );
-        })}
+          {!showNewNote && !readOnly && (
+            <button
+              onClick={handleAddNote}
+              className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl shadow-md hover:bg-yellow-400 transition"
+            >
+              + Add Note (T)
+            </button>
+          )}
+        </div>
 
-        {!showNewNote && !readOnly && (
-          <button
-            onClick={handleAddNote}
-            className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl shadow-md hover:bg-yellow-400 transition"
-          >
-            + Add Note (T)
+        {/* Right (Toolbar) */}
+        <div className="flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-4 py-2 space-x-3 h-fit">
+          <span className="text-sm font-semibold max-w-xs truncate">{currentUser.name}</span>
+          <button onClick={handleSave} className="p-2 hover:bg-gray-100 rounded-md" title="Save">
+            <FontAwesomeIcon icon={faSave} />
           </button>
-        )}
+          <button
+            onClick={() => setChatOpen(prev => !prev)}
+            className="p-2 hover:bg-gray-100 rounded-md"
+            title="Chat"
+            aria-expanded={isChatOpen}
+            aria-controls="chatbox"
+          >
+            <FontAwesomeIcon icon={faComments} />
+          </button>
+          <button onClick={handleThemeChange} className="p-2 hover:bg-gray-100 rounded-md" title="Change Theme">
+            <FontAwesomeIcon icon={faShirt} />
+          </button>
+          <button onClick={() => setShareModalOpen(true)} className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition" title="Share">
+            <FontAwesomeIcon icon={faShareAlt} />
+          </button>
+        </div>
       </div>
+
 
       {/* Kotak input teks transparan untuk tombol T */}
       {textModeActive && (
