@@ -313,14 +313,23 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
           return (
             <div
               key={key}
-              ref={el => (editableRefs.current[key] = el)}
-              contentEditable={!readOnly}
+              ref={el => {
+                editableRefs.current[key] = el;
+                // Set content only if not editing (prevents cursor jump)
+                if (el && (!el.isContentEditable || readOnly || moveMode)) {
+                  el.innerText = val || '';
+                }
+              }}
+              contentEditable={!readOnly && !moveMode}
               suppressContentEditableWarning
               onInput={e => handleInputChange(e, key)}
               spellCheck={false}
               role="textbox"
               aria-multiline="true"
-              className={`absolute text-black font-bold p-3 border border-black rounded-md bg-red-600 shadow-md min-h-[100px] ${moveMode ? 'cursor-move' : ''}`}
+              dir="ltr"
+              className={`absolute text-black text-left font-bold p-3 border border-black rounded-md bg-red-600 shadow-md min-h-[100px]
+                ${moveMode ? 'cursor-move' : ''}
+                break-words whitespace-pre-wrap overflow-hidden`}
               style={{ top: pos.top, left: pos.left, width: pos.w || '220px' }}
               onMouseDown={moveMode ? (e => handleMouseDown(e, key)) : undefined}
             />
