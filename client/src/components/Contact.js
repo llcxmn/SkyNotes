@@ -23,8 +23,7 @@ export default function Contact() {
         <div className="bg-gradient-to-r from-[#0f3a8a] via-[#0066ff] to-[#7fb7ff] rounded-3xl p-6 mb-8 text-white">
           <h2 className="font-extrabold text-xl mb-3 select-none">Address</h2>
           <p className="text-base leading-relaxed max-w-4xl">
-            Lorem ipsum dolor sit amet consectetur. Amet augue amet massa varius
-            purus faucibus. Sagittis netus egestas eu eget justo euismod sit
+            Jl. Melati No. 27, Kelurahan Sukamaju, Kecamatan Cempaka Putih, Kota Jakarta Pusat, DKI Jakarta 10510
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-6">
@@ -47,11 +46,11 @@ export default function Contact() {
             <div className="flex items-center mb-3 space-x-3 text-base">
               <FontAwesomeIcon icon={faPhoneAlt} />
               <span>+62 123-456-789</span>
-              <span>Lorem Ipsum</span>
+              <span>Daffa Harikhsan</span>
             </div>
             <div className="flex items-center space-x-3 text-base">
               <FontAwesomeIcon icon={faEnvelope} />
-              <span>loremipsum@gmail.com</span>
+              <span>SkyNoteGACOR@gmail.com</span>
             </div>
           </div>
         </div>

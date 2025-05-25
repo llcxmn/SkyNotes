@@ -24,6 +24,7 @@ import NotesPageCollaboration from './components/NotesPageCollaboration';
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from './components/ProtectedRoute'; 
 
+
 const App = () => {
   return (
     <AuthProvider>

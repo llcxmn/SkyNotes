@@ -1,6 +1,7 @@
 'use client';
 import { ChevronLeft} from 'lucide-react';
 import React, {useState} from 'react';
+import { useNavigate } from 'react-router-dom';
 
 //pop up
 const IconX = ({ size = 24, className = "" }) => (
@@ -60,6 +61,7 @@ function LanggananPage() {
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [selectedPackage, setSelectedPackage] = useState({ name: "", price: "" });
 const [showThankYou, setShowThankYou] = useState(false);
+const navigate = useNavigate();
 
 const handleOpenModal = (packageName, packagePrice) => {
     setSelectedPackage({ name: packageName, price: packagePrice });
@@ -75,6 +77,10 @@ const handleConfirmSubscription = () => {
     handleCloseModal(); 
     setShowThankYou(true);
 };
+
+const handleStartFreePlan = () => {
+    navigate('/auth');
+}
 
     return(
         <div className='bg-[#F6FAFE] h-screen'>
@@ -116,7 +122,11 @@ const handleConfirmSubscription = () => {
                             <h1 className='font-extrabold text-[1em]'>Gratis</h1>
                             <p className='text-[0.8rem]'>Lifetime</p>
                         </div>
-                        <button className='px-5 py-1 font-bold bg-yellow-300 rounded-lg hover:bg-white hover:text-black'>Start</button>
+                        <button 
+                        onClick={handleStartFreePlan}
+                        className='px-5 py-1 font-bold bg-yellow-300 rounded-lg hover:bg-white hover:text-black'>
+                            Start
+                            </button>
                     </div>
                     <div className='h-[60%] relative z-10 flex flex-col justify-center items-center text-center '>
                         <div className='flex flex-col'>
@@ -208,7 +218,7 @@ const handleConfirmSubscription = () => {
                         </div>
                         <div className='flex flex-col'>
                             <p className='text-md font-bold'>10 Color</p>
-                            <p className='text-sm mb-5'>Note themes and dark mode</p>
+                            <p className='text-sm mb-5'>Note themes</p>
                         </div>
                         <div className='flex flex-col'>
                             <p className='text-md font-bold'>up to 10 users</p>

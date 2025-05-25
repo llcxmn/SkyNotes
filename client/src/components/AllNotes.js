@@ -1,12 +1,18 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { getUserNotes, createNote } from '../lib/dynamoDB';
+import { onAuthStateChanged } from "firebase/auth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSearch } from '@fortawesome/free-solid-svg-icons';
 import NoteMenu from './NoteMenu';
 import NoteDetail from './NoteDetail';
 import NoteShare from './NoteShare';
+import {auth} from '../firebase'; 
 
 const AllNotes = () => {
+  const [notesData, setNotesData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortBy, setSortBy] = React.useState('lastViewed');
@@ -15,40 +21,92 @@ const AllNotes = () => {
   const [showDetail, setShowDetail] = React.useState(false);
   const [showShare, setShowShare] = React.useState(false);
 
-  const notesData = [
-    {
-      id: 1,
-      title: 'Meeting notes',
-      lastViewed: new Date(2025, 4, 20, 10, 0),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-    },
-    {
-      id: 2,
-      title: 'Project Plan',
-      lastViewed: new Date(2025, 4, 19, 15, 30),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-    },
-    {
-      id: 3,
-      title: 'UI Sketches',
-      lastViewed: new Date(2025, 4, 18, 9, 15),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-    },
-    {
-      id: 4,
-      title: 'Ideas',
-      lastViewed: new Date(2025, 4, 17, 14, 45),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-    },
-    {
-      id: 5,
-      title: 'Daily Journal',
-      lastViewed: new Date(2025, 4, 16, 11, 5),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-    },
-  ];
+  const [displayName, setDisplayName] = useState("");
+  
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (auth.currentUser) {
+        try {
+          const notes = await getUserNotes(auth.currentUser.uid);
+          const formattedNotes = notes.map(note => ({
+            id: note.noteId,
+            title: note.title,
+            lastViewed: new Date(note.lastViewed),
+            image: note.image || 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
+          }));
+          setNotesData(formattedNotes);
+        } catch (error) {
+          console.error("Failed to fetch notes:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
 
-  const filteredNotes = notesData.filter(note =>
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setDisplayName(user.displayName || "User");
+        fetchNotes();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+const handleAddNote = async (e) => {
+    // 1. Add event parameter and prevent default behavior
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("Add note clicked"); // Debugging log
+
+    // 2. Enhanced auth check with redirection
+    if (!auth.currentUser) {
+      console.warn("No user authenticated - redirecting to login");
+      return navigate('/auth', { state: { from: '/allnotes' } });
+    }
+
+    try {
+      // 3. Create new note with additional default fields
+      const newNote = {
+        noteId: `note_${Date.now()}`,
+        userId: auth.currentUser.uid,
+        title: "Untitled Note",
+        content: "",
+        lastViewed: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
+      };
+
+      console.log("Creating note:", newNote); // Debugging log
+
+      // 4. Add loading state during creation
+      setLoading(true);
+      await createNote(newNote);
+      
+      // 5. Optimistic UI update
+      setNotesData(prev => [{
+        ...newNote,
+        id: newNote.noteId,
+        lastViewed: new Date(newNote.lastViewed)
+      }, ...prev]);
+
+      // 6. Navigate to edit the new note
+      navigate(`/notespage?noteId=${newNote.noteId}`, { 
+        state: { newNote: true } 
+      });
+      
+    } catch (error) {
+      console.error("Failed to create note:", error);
+      // 7. Error handling with user feedback
+      alert("Failed to create note. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+   const filteredNotes = notesData.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -62,7 +120,14 @@ const AllNotes = () => {
 
   return (
     <section className="flex-1 flex flex-col gap-4 mt-8 md:mt-0 px-4 md:px-8 min-h-screen">
-
+      {/* Loading state */}
+      {loading && (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
+        </div>
+      )}
+      {!loading && (
+        <>
       {/* Search Bar */}
       <div className="flex justify-end">
         <div className="flex items-center bg-white rounded-md px-4 py-2 w-full md:w-64">
@@ -101,7 +166,7 @@ const AllNotes = () => {
 
         {/* Add Notes Box */}
         <div
-          onClick={() => navigate('/notespage')}
+          onClick={handleAddNote}
           className="flex flex-col space-y-2 cursor-pointer select-none"
         >
           <div className="bg-white rounded-lg aspect-square flex items-center justify-center">
@@ -128,7 +193,7 @@ const AllNotes = () => {
             </div>
             <span className="text-white font-medium text-sm md:text-base">{note.title}</span>
             <span className="text-white text-xs md:text-sm font-light select-text">
-              Iwan Manjul - {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam
+              {displayName} - {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam
             </span>
             <div className="absolute top-1 right-1">
               <NoteMenu
@@ -140,6 +205,8 @@ const AllNotes = () => {
           </div>
         ))}
       </div>
+      </>
+      )}
 
       {/* Modals */}
       {showDetail && <NoteDetail note={selectedNote} onClose={() => setShowDetail(false)} />}
