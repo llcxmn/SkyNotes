@@ -63,14 +63,7 @@ const Sidebar = () => {
             <FontAwesomeIcon icon={faFolder} />
             <span>Collaboration</span>
           </NavLink>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center space-x-2 text-white hover:text-yellow-400 border-b border-gray-400 pb-2 bg-transparent"
-            style={{ background: "none", border: "none", cursor: "pointer" }}
-          >
-            <FontAwesomeIcon icon={faRightFromBracket} />
-            <span>Log Out</span>
-          </button>
+          
         </div>
       </nav>
 
