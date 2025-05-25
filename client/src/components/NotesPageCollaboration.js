@@ -8,6 +8,7 @@ import {
   faComments,
   faShirt,
   faPencilAlt,
+  faArrowsAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
 import { io } from 'socket.io-client';  
@@ -25,6 +26,56 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
   const [emails, setEmails] = useState('');
   const [themeColor, setThemeColor] = useState("#fc4e4e");
   const [showNewNote, setShowNewNote] = useState(false);
+  const [notePositions, setNotePositions] = useState({});
+  const dragData = useRef({ key: null, offsetX: 0, offsetY: 0 });
+  const [moveMode, setMoveMode] = useState(false);
+  const noteAreaRef = useRef(null);
+
+  const handleMouseDown = (e, key) => {
+    const noteDiv = editableRefs.current[key];
+    const noteArea = noteAreaRef.current;
+    if (!noteDiv || !noteArea) return;
+    const areaRect = noteArea.getBoundingClientRect();
+    dragData.current = {
+      key,
+      offsetX: e.clientX - areaRect.left - noteDiv.offsetLeft,
+      offsetY: e.clientY - areaRect.top - noteDiv.offsetTop,
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    const { key, offsetX, offsetY } = dragData.current;
+    if (!key) return;
+    const noteDiv = editableRefs.current[key];
+    const noteArea = noteAreaRef.current;
+    if (!noteDiv || !noteArea) return;
+
+    const areaRect = noteArea.getBoundingClientRect();
+    const noteRect = noteDiv.getBoundingClientRect();
+    const noteWidth = noteRect.width;
+    const noteHeight = noteRect.height;
+
+    // Calculate new position relative to note area
+    let newLeft = e.clientX - areaRect.left - offsetX;
+    let newTop = e.clientY - areaRect.top - offsetY;
+
+    // Clamp within area
+    newLeft = Math.max(0, Math.min(newLeft, areaRect.width - noteWidth));
+    newTop = Math.max(0, Math.min(newTop, areaRect.height - noteHeight));
+
+    setNotePositions(prev => ({
+      ...prev,
+      [key]: { top: newTop, left: newLeft }
+    }));
+  };
+
+  const handleMouseUp = () => {
+    dragData.current = { key: null, offsetX: 0, offsetY: 0 };
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
 
   // Chat state
   const [isChatOpen, setChatOpen] = useState(false);
@@ -41,9 +92,9 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
   const editableRefs = useRef({});
 
   useEffect(() => {
-    const allTexts = Object.values(notes).join(' ');
-    const count = allTexts.trim() === '' ? 0 : allTexts.trim().split(/\s+/).length;
-    setWordCount(count);
+    // Count total characters in all notes
+    const allTexts = Object.values(notes).join('');
+    setWordCount(allTexts.length);
   }, [notes]);
 
   const handleInputChange = (e, key) => {
@@ -93,6 +144,10 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
     const newKey = 'note' + Date.now();
     setNotes(prev => ({ ...prev, [newKey]: '' }));
     setShowNewNote(true);
+    setNotePositions(prev => ({
+      ...prev,
+      [newKey]: { top: 100, left: 100 } // Default position
+    }));
   };
 
   // Toggle mode T
@@ -182,32 +237,35 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
 
       {/* Note Area - A4 Centered */}
       <div
+        ref={noteAreaRef}
         className="relative mx-auto mt-40 w-[650px] h-[800px] shadow-lg rounded"
         style={{ backgroundColor: themeColor }}
       >
         {Object.entries(notes).map(([key, val], i) => {
-          const positions = [
-            { top: '90px', left: '360px', w: '220px' },
-            { top: '400px', left: '230px', w: '140px' },
-            { top: '600px', left: '400px', w: '250px' },
-          ];
-          const pos = positions[i] || { top: '100px', left: `${100 + i * 250}px`, w: '220px' };
-
+          const pos = notePositions[key] || { top: 100 + i * 50, left: 100 + i * 50, w: '220px' };
           return (
             <div
               key={key}
-              ref={(el) => (editableRefs.current[key] = el)}
-              contentEditable={!readOnly}
+              ref={el => {
+                editableRefs.current[key] = el;
+                // Set content only if not editing (prevents cursor jump)
+                if (el && (!el.isContentEditable || readOnly || moveMode)) {
+                  el.innerText = val || '';
+                }
+              }}
+              contentEditable={!readOnly && !moveMode}
               suppressContentEditableWarning
-              onInput={(e) => handleInputChange(e, key)}
+              onInput={e => handleInputChange(e, key)}
               spellCheck={false}
               role="textbox"
               aria-multiline="true"
-              className="absolute text-black font-bold p-3 border border-black rounded-md bg-red-600 shadow-md min-h-[100px]"
-              style={{ top: pos.top, left: pos.left, width: pos.w }}
-            >
-              {val}
-            </div>
+              dir="ltr"
+              className={`absolute text-black text-left font-bold p-3 border border-black rounded-md bg-red-600 shadow-md min-h-[100px]
+                ${moveMode ? 'cursor-move' : ''}
+                break-words whitespace-pre-wrap overflow-hidden`}
+              style={{ top: pos.top, left: pos.left, width: pos.w || '220px' }}
+              onMouseDown={moveMode ? (e => handleMouseDown(e, key)) : undefined}
+            />
           );
         })}
 
@@ -255,19 +313,40 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-6 py-3 space-x-4 z-50">
           <button
             onClick={toggleTextMode}
-            className={`font-bold px-4 py-2 rounded-md transition ${textModeActive ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-yellow-100'}`}
+            className={`font-bold px-4 py-2 rounded-md transition
+              ${textModeActive ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}`}
             title="Text (T)"
           >
             T
           </button>
-          <button onClick={handleBold} className="px-4 py-2 rounded-md hover:bg-gray-100 transition" title="Bold (B)">
+          <button
+            onClick={handleBold}
+            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
+            title="Bold (B)"
+          >
             <FontAwesomeIcon icon={faBold} />
           </button>
-          <button onClick={handleChecklist} className="px-4 py-2 rounded-md hover:bg-gray-100 transition" title="Checklist">
+          <button
+            onClick={handleChecklist}
+            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
+            title="Checklist"
+          >
             <FontAwesomeIcon icon={faCheckSquare} />
           </button>
-          <button onClick={handleInsertImage} className="px-4 py-2 rounded-md hover:bg-gray-100 transition" title="Insert Image">
+          <button
+            onClick={handleInsertImage}
+            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
+            title="Insert Image"
+          >
             <FontAwesomeIcon icon={faImage} />
+          </button>
+          <button
+            onClick={() => setMoveMode((prev) => !prev)}
+            className={`px-4 py-2 rounded-md transition font-bold
+              ${moveMode ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}`}
+            title="Move Notes"
+          >
+            <FontAwesomeIcon icon={faArrowsAlt} />
           </button>
           <input
             ref={fileInputRef}
@@ -276,7 +355,11 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
             onChange={onFileChange}
             style={{ display: 'none' }}
           />
-          <button onClick={handleStrikethrough} className="px-4 py-2 rounded-md hover:bg-gray-100 transition" title="Strikethrough">
+          <button
+            onClick={handleStrikethrough}
+            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
+            title="Strikethrough"
+          >
             <FontAwesomeIcon icon={faPencilAlt} />
           </button>
         </div>
@@ -285,7 +368,7 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
       {/* Word Count */}
       <div className="fixed bottom-10 right-10 flex items-center bg-white rounded-xl shadow-md border border-gray-200 z-50">
         <div className="px-4 py-2 text-black text-sm font-semibold">{wordCount}/100</div>
-        <button className="bg-blue-600 text-white px-6 py-2 rounded-r-xl font-semibold">Word</button>
+        <button className="bg-blue-600 text-white px-6 py-2 rounded-r-xl font-semibold">Char</button>
       </div>
 
       {/* Share Modal */}
