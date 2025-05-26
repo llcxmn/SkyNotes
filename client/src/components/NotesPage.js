@@ -14,7 +14,7 @@ import {
 import { faImage } from '@fortawesome/free-regular-svg-icons';
 import { io } from 'socket.io-client';
 const currentUser = {
-  name: "John Doe",
+  name: "Daffa",
   status: "Free",
 };
 
@@ -133,8 +133,8 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
   // Chat state
   const [isChatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, user: 'John Doe', text: 'Hello, how can I help you?' },
-    { id: 2, user: 'You', text: 'Hi! Just testing chat.' },
+    { id: 1, user: 'Daffa', text: 'Hai, semangat ya sem 4' },
+    { id: 2, user: 'You', text: 'Hi! makasi ye.' },
   ]);
   const [chatInput, setChatInput] = useState('');
 
@@ -320,7 +320,7 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
               onClick={handleAddNote}
               className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl shadow-md hover:bg-yellow-400 transition z-50"
             >
-              + Tambahkan Note (T)
+              + Add Note (T)
             </button>
           )}
         </div>
