@@ -9,7 +9,8 @@ import {
   faShirt,
   faPencilAlt,
   faArrowsAlt,
-  faXmark
+  faXmark,
+  faEraser
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
 import { io } from 'socket.io-client';
@@ -30,6 +31,52 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
   const dragData = useRef({ key: null, offsetX: 0, offsetY: 0 });
   const [moveMode, setMoveMode] = useState(false);
   const noteAreaRef = useRef(null);
+  const [drawingMode, setDrawingMode] = useState(false);
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastPoint, setLastPoint] = useState(null);
+  const [drawTool, setDrawTool] = useState('pencil');
+
+  const handleCanvasMouseDown = (e) => {
+  setIsDrawing(true);
+  const rect = canvasRef.current.getBoundingClientRect();
+  setLastPoint({
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+    });
+  };
+
+  const handleCanvasMouseMove = (e) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (lastPoint) {
+      ctx.strokeStyle = drawTool === 'eraser' ? themeColor : "#222"; // Use themeColor instead of white
+      ctx.lineWidth = drawTool === 'eraser' ? 16 : 2;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(lastPoint.x, lastPoint.y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      setLastPoint({ x, y });
+    }
+  };
+
+  const handleCanvasMouseUp = () => {
+    setIsDrawing(false);
+    setLastPoint(null);
+  };
+
+  const handleClearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
 
   const handleMouseDown = (e, key) => {
     const noteDiv = editableRefs.current[key];
@@ -307,13 +354,28 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
                 aria-multiline="true"
                 dir="ltr"
                 className={`absolute text-black text-left font-bold p-3 border border-black rounded-md bg-red-600 shadow-md min-h-[100px]
-            ${moveMode ? 'cursor-move' : ''}
-            break-words whitespace-pre-wrap overflow-hidden`}
+                ${moveMode ? 'cursor-move' : ''}
+                break-words whitespace-pre-wrap overflow-hidden z-50`} // <-- z-50 to ensure notes are above canvas
                 style={{ top: pos.top, left: pos.left, width: pos.w || '220px' }}
                 onMouseDown={moveMode ? (e => handleMouseDown(e, key)) : undefined}
               />
             );
           })}
+
+          <canvas
+            ref={canvasRef}
+            width={650}
+            height={800}
+            className="absolute top-0 left-0 w-full h-full z-40 pointer-events-auto"
+            style={{
+              pointerEvents: drawingMode ? 'auto' : 'none',
+              background: 'transparent'
+            }}
+            onMouseDown={drawingMode ? handleCanvasMouseDown : undefined}
+            onMouseMove={drawingMode ? handleCanvasMouseMove : undefined}
+            onMouseUp={drawingMode ? handleCanvasMouseUp : undefined}
+            onMouseLeave={drawingMode ? handleCanvasMouseUp : undefined}
+          />
 
           {!showNewNote && !readOnly && (
             <button
@@ -385,37 +447,47 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-xl shadow-md border border-gray-200 px-6 py-3 space-x-4 z-50">
           <button
             onClick={toggleTextMode}
+            disabled={drawingMode}
             className={`font-bold px-4 py-2 rounded-md transition
-              ${textModeActive ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}`}
+              ${textModeActive ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}
+              ${drawingMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Text (T)"
           >
             T
           </button>
           <button
             onClick={handleBold}
-            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
+            disabled={drawingMode}
+            className={`px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm
+              ${drawingMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Bold (B)"
           >
             <FontAwesomeIcon icon={faBold} />
           </button>
           <button
             onClick={handleChecklist}
-            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
+            disabled={drawingMode}
+            className={`px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm
+              ${drawingMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Checklist"
           >
             <FontAwesomeIcon icon={faCheckSquare} />
           </button>
           <button
             onClick={handleInsertImage}
-            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
+            disabled={drawingMode}
+            className={`px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm
+              ${drawingMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Insert Image"
           >
             <FontAwesomeIcon icon={faImage} />
           </button>
           <button
             onClick={() => setMoveMode((prev) => !prev)}
+            disabled={drawingMode}
             className={`px-4 py-2 rounded-md transition font-bold
-              ${moveMode ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}`}
+              ${moveMode ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}
+              ${drawingMode ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Move Notes"
           >
             <FontAwesomeIcon icon={faArrowsAlt} />
@@ -426,14 +498,47 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
             accept="image/*"
             onChange={onFileChange}
             style={{ display: 'none' }}
+            disabled={drawingMode}
           />
           <button
-            onClick={handleStrikethrough}
-            className="px-4 py-2 rounded-md transition bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm"
-            title="Strikethrough"
+            onClick={() => {
+              if (drawingMode && drawTool === 'pencil') {
+                setDrawingMode(false);
+              } else {
+                setDrawingMode(true);
+                setDrawTool('pencil');
+              }
+            }}
+            className={`px-4 py-2 rounded-md transition font-bold
+              ${drawingMode && drawTool === 'pencil' ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}`}
+            title="Draw (Pencil)"
           >
             <FontAwesomeIcon icon={faPencilAlt} />
           </button>
+          <button
+            onClick={() => {
+              if (drawingMode && drawTool === 'eraser') {
+                setDrawingMode(false);
+              } else {
+                setDrawingMode(true);
+                setDrawTool('eraser');
+              }
+            }}
+            className={`px-4 py-2 rounded-md transition font-bold
+              ${drawingMode && drawTool === 'eraser' ? 'bg-yellow-300 text-black' : 'bg-transparent text-black hover:bg-gray-200 active:bg-yellow-200 shadow-sm'}`}
+            title="Eraser"
+          >
+            <FontAwesomeIcon icon={faEraser} />
+          </button>
+          {drawingMode && (
+            <button
+              onClick={handleClearCanvas}
+              className="px-4 py-2 rounded-md transition bg-red-200 text-black hover:bg-red-300"
+              title="Clear Drawing"
+            >
+              Clear
+            </button>
+          )}
         </div>
       )}
 
