@@ -8,46 +8,63 @@ import NoteMenu from './NoteMenu';
 import NoteDetail from './NoteDetail';
 import NoteShare from './NoteShare';
 import {auth} from '../firebase'; 
+import { getUserNotes, createNote } from '../lib/dynamoDB';
 
 const Recently = ({ searchTerm, sortBy }) => {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState("");
-    
-      useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          if (user) {
-            setDisplayName(user.displayName || "User"); // fallback if no name
-          }
-        });
-    
-        return () => unsubscribe(); 
-      }, []);
-
-  // Simulasi data awal
-  const initialNotes = [
-    {
-      id: 1,
-      title: 'Meeting notes ',
-      lastViewed: new Date(2025, 4, 20, 10, 0),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-      author: 'Iwan Manju',
-    },
-    {
-      id: 2,
-      title: 'Project Plan ',
-      lastViewed: new Date(2025, 4, 19, 8, 30),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-      author: displayName,
-    },
-  ];
-
-  const [notesData, setNotesData] = useState(initialNotes);
+  const [notesData, setNotesData] = useState([]);
   const [trashData, setTrashData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Hanya modal yang dibuka dari titik tiga
   const [selectedNote, setSelectedNote] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showShare, setShowShare] = useState(false);
+
+  // Fetch notes from DB
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setDisplayName(user.displayName || "User");
+
+        const fetchNotes = async () => {
+          try {
+            const notes = await getUserNotes(user.uid);
+            const now = Date.now();
+            const filtered = notes
+              .filter(note => !note.deleted)
+              .map(note => ({
+                id: note.noteId,
+                title: note.title,
+                lastViewed: new Date(note.lastViewed),
+                image: note.image || 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
+                author: user.displayName || "User"
+              }))
+              .filter(note => (now - note.lastViewed.getTime()) < 10 * 3600000);
+            setNotesData(filtered);
+          } catch (error) {
+            console.error("Failed to fetch notes:", error);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        fetchNotes();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const updateNote = async (noteId, updates) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+    const updatedNote = notesData.find(n => n.id === noteId);
+    if (!updatedNote) return;
+    const newNote = { ...updatedNote, ...updates, userId, noteId };
+    await createNote(newNote);
+  };
 
   // Filter dan sort notes
   const filteredNotes = notesData.filter(note =>
@@ -62,16 +79,20 @@ const Recently = ({ searchTerm, sortBy }) => {
     }
   });
 
-  const handleDelete = (noteId) => {
-    const noteToDelete = notesData.find(note => note.id === noteId);
-    if (!noteToDelete) return;
-
-    setTrashData(prevTrash => [...prevTrash, noteToDelete]);
-    setNotesData(prevNotes => prevNotes.filter(note => note.id !== noteId));
-
-    if (selectedNote?.id === noteId) {
-      setShowDetail(false);
-      setSelectedNote(null);
+  const handleDelete = async (noteId) => {
+    try {
+      setLoading(true);
+      await updateNote(noteId, { deleted: true });
+      setNotesData(prevNotes => prevNotes.filter(note => note.id !== noteId));
+      setTrashData([]); // Trash is now managed by DB
+      if (selectedNote?.id === noteId) {
+        setShowDetail(false);
+        setSelectedNote(null);
+      }
+    } catch (error) {
+      alert("Failed to move note to trash.");
+    } finally {
+      setLoading(false);
     }
   };
 

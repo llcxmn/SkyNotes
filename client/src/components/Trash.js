@@ -1,28 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faEllipsisV, faTrashRestore, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from '../firebase';
+import { getUserNotes, deleteNote } from '../lib/dynamoDB';
 
 const Trash = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('lastViewed');
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [trashNotes, setTrashNotes] = useState([]);
+  const [displayName, setDisplayName] = useState('User');
   const navigate = useNavigate();
 
-  const [trashNotes, setTrashNotes] = useState([
-    {
-      id: 1,
-      title: 'Deleted Note A',
-      lastViewed: new Date(2025, 4, 20, 10, 0),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-    },
-    {
-      id: 2,
-      title: 'Old Draft',
-      lastViewed: new Date(2025, 4, 18, 14, 30),
-      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-    },
-  ]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setDisplayName(user.displayName || "User");
+        const fetchTrash = async () => {
+          try {
+            const notes = await getUserNotes(user.uid);
+            const trashed = notes.filter(note => note.deleted).map(note => ({
+              id: note.noteId,
+              userId: note.userId || user.uid, // fallback to user.uid if missing
+              title: note.title,
+              lastViewed: new Date(note.lastViewed),
+              image: note.image || 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
+            }));
+            setTrashNotes(trashed);
+          } catch (error) {
+            console.error("Failed to fetch trash notes:", error);
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchTrash();
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const filtered = trashNotes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -38,10 +56,23 @@ const Trash = () => {
     // Implementasi logika pemulihan catatan
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const confirmDelete = window.confirm('Yakin ingin menghapus permanen catatan ini?');
-    if (confirmDelete) {
+    if (!confirmDelete) return;
+    try {
+      setLoading(true);
+      const note = trashNotes.find(n => n.id === id);
+      if (!note) throw new Error('Note not found');
+      const userId = String(note.userId);
+      const noteId = String(id);
+      if (!userId) throw new Error('No userId');
+      await deleteNote(userId, noteId);
       setTrashNotes(prev => prev.filter(note => note.id !== id));
+    } catch (error) {
+      console.error('Permanent delete error:', error);
+      alert('Gagal menghapus catatan secara permanen. ' + (error?.message || ''));
+    } finally {
+      setLoading(false);
     }
   };
 

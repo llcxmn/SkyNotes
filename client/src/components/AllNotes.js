@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import { getUserNotes, createNote } from '../lib/dynamoDB';
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { onAuthStateChanged } from "firebase/auth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSearch } from '@fortawesome/free-solid-svg-icons';
@@ -28,12 +29,14 @@ const AllNotes = () => {
       if (auth.currentUser) {
         try {
           const notes = await getUserNotes(auth.currentUser.uid);
-          const formattedNotes = notes.map(note => ({
-            id: note.noteId,
-            title: note.title,
-            lastViewed: new Date(note.lastViewed),
-            image: note.image || 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
-          }));
+          const formattedNotes = notes
+            .filter(note => !note.deleted)
+            .map(note => ({
+              id: note.noteId,
+              title: note.title,
+              lastViewed: new Date(note.lastViewed),
+              image: note.image || 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
+            }));
           setNotesData(formattedNotes);
         } catch (error) {
           console.error("Failed to fetch notes:", error);
@@ -101,6 +104,29 @@ const handleAddNote = async (e) => {
       console.error("Failed to create note:", error);
       // 7. Error handling with user feedback
       alert("Failed to create note. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateNote = async (noteId, updates) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+    // Fetch the full note from DB to ensure all fields are present
+    const notes = await getUserNotes(userId);
+    const fullNote = notes.find(n => n.noteId === noteId);
+    if (!fullNote) return;
+    const newNote = { ...fullNote, ...updates, userId, noteId };
+    await createNote(newNote);
+  };
+
+const handleDelete = async (noteId) => {
+    try {
+      setLoading(true);
+      await updateNote(noteId, { deleted: true });
+      setNotesData(prev => prev.filter(note => note.id !== noteId));
+    } catch (error) {
+      alert("Failed to move note to trash.");
     } finally {
       setLoading(false);
     }
@@ -197,7 +223,7 @@ const handleAddNote = async (e) => {
             </span>
             <div className="absolute top-1 right-1">
               <NoteMenu
-                onDelete={() => console.log(`Delete note ${note.id}`)}
+                onDelete={() => handleDelete(note.id)}
                 onDetail={() => { setSelectedNote(note); setShowDetail(true); }}
                 onShare={() => setShowShare(true)}
               />

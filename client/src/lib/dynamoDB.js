@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 
 if (!process.env.REACT_APP_DYNAMODB_TABLE) {
   throw new Error("REACT_APP_DYNAMODB_TABLE is not defined in environment variables");
@@ -63,4 +63,13 @@ export async function getUserNotes(userId) {
     });
     throw error;
   }
+}
+
+export async function deleteNote(userId, noteId) {
+  // IMPORTANT: Update key names if your DynamoDB table uses different names (e.g., userID, noteID)
+  const command = new DeleteCommand({
+    TableName: process.env.REACT_APP_DYNAMODB_TABLE,
+    Key: { userId: String(userId), noteId: String(noteId) }
+  });
+  return client.send(command);
 }
