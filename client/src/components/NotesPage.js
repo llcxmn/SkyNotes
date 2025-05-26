@@ -8,7 +8,8 @@ import {
   faComments,
   faShirt,
   faPencilAlt,
-  faArrowsAlt
+  faArrowsAlt,
+  faXmark
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
 import { io } from 'socket.io-client';
@@ -319,7 +320,7 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
               onClick={handleAddNote}
               className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-yellow-300 text-black font-bold px-6 py-3 rounded-xl shadow-md hover:bg-yellow-400 transition z-50"
             >
-              + Add Note (T)
+              + Tambahkan Note (T)
             </button>
           )}
         </div>
@@ -332,7 +333,7 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
             <FontAwesomeIcon icon={faSave} />
           </button>
           <button
-            onClick={() => setChatOpen(prev => !prev)}
+            onClick={() => setChatOpen(true)}
             className="p-2 hover:bg-gray-100 rounded-md"
             title="Chat"
             aria-expanded={isChatOpen}
@@ -482,6 +483,11 @@ const NotesPage = ({ readOnly = false, initialNotes }) => {
           aria-label="Chat with collaborators"
         >
           <div className="flex-1 p-4 overflow-y-auto space-y-3">
+            <div className='flex justify-end'>
+              <button onClick={() => setChatOpen(false)} className='px-2 py-1 hover:cursor-pointer'>
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
             {chatMessages.map((msg) => (
               <div
                 key={msg.id}
