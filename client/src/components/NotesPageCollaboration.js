@@ -37,6 +37,7 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastPoint, setLastPoint] = useState(null);
   const [canvasImage, setCanvasImage] = useState(null);
+  const [logs, setLogs] = useState([]);
 
   const handleCanvasMouseDown = (e) => {
     setIsDrawing(true);
@@ -91,6 +92,7 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
     };
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    addLog('start-move-note', { key });
   };
 
   const handleMouseMove = (e) => {
@@ -117,6 +119,7 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
       ...prev,
       [key]: { top: newTop, left: newLeft }
     }));
+    addLog('move-note', { key, newTop, newLeft });
   };
 
   const handleMouseUp = () => {
@@ -150,6 +153,7 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
     if (readOnly) return;
     const text = e.target.innerText || '';
     setNotes(prev => ({ ...prev, [key]: text }));
+    addLog('edit-note', { key, text });
   };
 
   // Simulasi save: update state, bisa dikembangkan ke backend
@@ -197,6 +201,7 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
       ...prev,
       [newKey]: { top: 100, left: 100 } // Default position
     }));
+    addLog('add-note', { key: newKey });
   };
 
   // Toggle mode T
@@ -215,6 +220,7 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
     setNotes(prev => ({ ...prev, [newKey]: textInput }));
     setTextInput('');
     setTextModeActive(false);
+    addLog('add-note-textmode', { key: newKey, text: textInput });
   };
 
   // Cancel input teks T
@@ -242,6 +248,38 @@ const NotesPageCollaboration = ({ readOnly = false, initialNotes }) => {
       sendChatMessage();
     }
   };
+
+  // Helper to add log
+  const addLog = (action, details) => {
+    setLogs(prev => [
+      ...prev,
+      {
+        timestamp: new Date().toISOString(),
+        user: currentUser.name,
+        action,
+        details
+      }
+    ]);
+  };
+
+  useEffect(() => {
+    return () => {
+      // On unmount, send logs to backend to save
+      if (logs.length > 0) {
+        fetch('http://localhost:3002/api/save-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logs })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to save logs');
+        })
+        .catch(err => {
+          console.error('Failed to save logs:', err);
+        });
+      }
+    };
+  }, [logs]);
 
   return (
     <div className="relative min-h-screen font-sans">
