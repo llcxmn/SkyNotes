@@ -16,12 +16,17 @@ import {
   faPalette
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
+import { getUserNotes, createNote } from '../lib/dynamoDB';
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from '../firebase'; 
+import AllNotes from './AllNotes'; // <-- Import AllNotes for user preferences
 
 // Mock current user for single-user app
-const currentUser = {
-  name: "User", // Simplified name
-  status: "Free",
-};
+// const currentUser = {
+//   name: "User", // Simplified name
+//   status: "Free",
+// };
 
 const NOTE_AREA_WIDTH = 794; // A4 width at 96 DPI (approx)
 const NOTE_AREA_HEIGHT = 1123; // A4 height at 96 DPI (approx)
@@ -51,6 +56,23 @@ const NotesPage = () => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [colorPickerTarget, setColorPickerTarget] = useState(null);
   const [activeColorPickerNoteId, setActiveColorPickerNoteId] = useState(null);
+
+  // New currentUser state
+  const [currentUser, setCurrentUser] = useState({ name: "User", status: "Free", id: null });
+
+  useEffect(() => {
+    // Use Firebase auth to get user info, fallback to AllNotes.js logic
+    const unsubscribe = auth && auth.onAuthStateChanged ? onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser({
+          name: user.displayName || "User",
+          status: user.status || "Free",
+          id: user.uid
+        });
+      }
+    }) : () => {};
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
@@ -97,63 +119,64 @@ const NotesPage = () => {
   }, [saveCanvasHistory]); // Dependency: saveCanvasHistory (which depends on canvasHistoryStep)
 
 
-  // MODIFIED: Load initial state from localStorage based ONLY on currentDocId
+  // Remove localStorage-based load effect, replace with DynamoDB fetch
   useEffect(() => {
-    if (!currentDocId || !canvasRef.current) return;
-
-    const storageKey = `skyNoteData_${currentDocId}`;
-    const savedData = localStorage.getItem(storageKey);
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    // Helper to initialize a blank canvas state for history
-    const initializeEmptyCanvasForHistory = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL();
-      setCanvasHistory([dataUrl]);
-      setCanvasHistoryStep(0);
-    };
-
-    if (savedData) {
+    if (!currentDocId || !currentUser?.id || !canvasRef.current) return;
+    const fetchNotes = async () => {
       try {
-        const parsedData = JSON.parse(savedData);
-        setTitle(parsedData.title || `SkyNote ${currentDocId}`);
-        setNotes(parsedData.notes || {});
-        setThemeColor(parsedData.themeColor || "#fde6e6");
-
-        if (parsedData.drawingDataUrl) {
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-            const loadedDataUrl = canvas.toDataURL();
-            setCanvasHistory([loadedDataUrl]); // Initialize history with the loaded drawing
-            setCanvasHistoryStep(0);
-          };
-          img.onerror = () => { // Handle cases where image data is corrupted or invalid
-            console.error("Failed to load drawing image from saved data. Initializing empty canvas.");
+        const items = await getUserNotes(currentUser.id);
+        const doc = items.find(item => item.noteId === currentDocId);
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const initializeEmptyCanvasForHistory = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL();
+          setCanvasHistory([dataUrl]);
+          setCanvasHistoryStep(0);
+        };
+        if (doc) {
+          setTitle(doc.title || `SkyNote ${currentDocId}`);
+          setNotes(doc.notes || {});
+          setThemeColor(doc.themeColor || "#fde6e6");
+          if (doc.drawingDataUrl) {
+            const img = new window.Image();
+            img.onload = () => {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0);
+              const loadedDataUrl = canvas.toDataURL();
+              setCanvasHistory([loadedDataUrl]);
+              setCanvasHistoryStep(0);
+            };
+            img.onerror = () => {
+              initializeEmptyCanvasForHistory();
+            };
+            img.src = doc.drawingDataUrl;
+          } else {
             initializeEmptyCanvasForHistory();
-          };
-          img.src = parsedData.drawingDataUrl;
+          }
         } else {
-          initializeEmptyCanvasForHistory(); // No drawing data saved, initialize empty
+          setTitle(`SkyNote ${currentDocId}`);
+          setNotes({});
+          setThemeColor("#fde6e6");
+          initializeEmptyCanvasForHistory();
         }
       } catch (error) {
-        console.error(`Failed to parse saved data for ${currentDocId}:`, error);
-        // Initialize with defaults if parsing fails
         setTitle(`SkyNote ${currentDocId}`);
         setNotes({});
         setThemeColor("#fde6e6");
-        initializeEmptyCanvasForHistory();
+        if (canvasRef.current) {
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL();
+          setCanvasHistory([dataUrl]);
+          setCanvasHistoryStep(0);
+        }
+        console.error('Failed to fetch notes from DynamoDB', error);
       }
-    } else {
-      // No saved data for this ID, initialize a fresh state
-      setTitle(`SkyNote ${currentDocId}`);
-      setNotes({});
-      setThemeColor("#fde6e6");
-      initializeEmptyCanvasForHistory();
-    }
-  }, [currentDocId]); // <<< CRITICAL: Only currentDocId as dependency
+    };
+    fetchNotes();
+  }, [currentDocId, currentUser?.id]);
 
   const handleUndo = () => {
     if (canvasHistoryStep > 0) {
@@ -370,7 +393,59 @@ const NotesPage = () => {
     }));
   };
 
-  const deleteNote = (id) => {
+  const handleSave = async () => {
+    if (!currentDocId || !currentUser?.id) {
+      alert("Error: No document ID or user. Cannot save.");
+      return;
+    }
+    const canvas = canvasRef.current;
+    let drawingDataUrl = null;
+    if (canvas && canvasHistory.length > 0 && canvasHistoryStep >=0) {
+        drawingDataUrl = canvas.toDataURL('image/png');
+    }
+    const now = new Date().toISOString();
+    // Try to preserve createdAt if it exists in the loaded doc, otherwise use now
+    let createdAt = now;
+    if (notes && typeof notes === 'object' && Object.keys(notes).length > 0) {
+      // Try to find createdAt from the loaded doc if available
+      if (typeof window !== 'undefined' && window.localStorage) {
+        // Defensive: try to get from localStorage if ever needed (legacy)
+        const storageKey = `skyNoteData_${currentDocId}`;
+        const savedData = localStorage.getItem(storageKey);
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            if (parsed.createdAt) createdAt = parsed.createdAt;
+          } catch {}
+        }
+      }
+      // Or, if you loaded the doc from DynamoDB, you could keep it in a ref/state
+      // For now, fallback to now
+    }
+    const dataToSave = {
+      userId: currentUser.id,
+      noteId: currentDocId,
+      title,
+      notes,
+      themeColor,
+      drawingDataUrl,
+      lastViewed: now,
+      createdAt,
+      updatedAt: now,
+      image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
+      // Add any other attributes you want to persist from AllNotes.js
+    };
+    try {
+      await createNote(dataToSave);
+      alert(`Notes for ${currentDocId} saved to cloud!`);
+    } catch (err) {
+      alert('Failed to save note to DynamoDB.');
+      console.error(err);
+    }
+  };
+
+  // Update deleteNote to also delete from DynamoDB
+  const deleteNote = async (id) => {
     setNotes(prev => {
       const newNotes = { ...prev };
       delete newNotes[id];
@@ -379,33 +454,23 @@ const NotesPage = () => {
     if (selectedNoteId === id) {
       setSelectedNoteId(null);
     }
-  };
-
-  const handleSave = async () => {
-    if (!currentDocId) {
-      alert("Error: No document ID. Cannot save.");
-      return;
+    // Optionally, update the note in DynamoDB after local delete
+    if (currentDocId && currentUser?.id) {
+      try {
+        const dataToSave = {
+          userId: currentUser.id,
+          noteId: currentDocId,
+          title,
+          notes: Object.fromEntries(Object.entries(notes).filter(([nid]) => nid !== id)),
+          themeColor,
+          drawingDataUrl: canvasRef.current ? canvasRef.current.toDataURL('image/png') : null,
+          updatedAt: new Date().toISOString(),
+        };
+        await createNote(dataToSave);
+      } catch (err) {
+        console.error('Failed to update note after delete', err);
+      }
     }
-    const canvas = canvasRef.current;
-    // Ensure drawingDataUrl is only captured if canvas exists and has content beyond a blank state
-    let drawingDataUrl = null;
-    if (canvas && canvasHistory.length > 0 && canvasHistoryStep >=0) {
-        // Optionally, check if the current canvas isn't "blank" before saving its data URL
-        // This is a bit more complex, might involve comparing to an empty canvas data URL
-        drawingDataUrl = canvas.toDataURL('image/png');
-    }
-
-
-    const dataToSave = {
-      title,
-      notes,
-      themeColor,
-      drawingDataUrl,
-    };
-
-    const storageKey = `skyNoteData_${currentDocId}`;
-    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
-    alert(`Notes for ${currentDocId} saved locally!`);
   };
 
   const handleFormat = (command) => {
@@ -629,48 +694,35 @@ const NotesPage = () => {
                     ...noteDynamicStyle
                 }}
                 onMouseDownCapture={(e) => {
-                  if (drawingMode) return;
-                  if (moveMode) handleNoteMouseDown(e, id);
-                  else setSelectedNoteId(id);
+                  if (moveMode && !drawingMode) {
+                    handleNoteMouseDown(e, id);
+                  }
                 }}
-                onClick={(e) => e.stopPropagation()}
+                onClick={() => {
+                  if (!drawingMode) {
+                    setSelectedNoteId(id);
+                    setMoveMode(false);
+                  }
+                }}
               >
-                <textarea
-                  value={note.text}
-                  onChange={(e) => handleNoteTextChange(e, id)}
-                  onFocus={() => {
-                      if (drawingMode) return;
-                      setSelectedNoteId(id);
-                      setMoveMode(false);
-                  }}
-                  spellCheck="false"
-                  className={`w-full h-full resize-none bg-transparent outline-none p-1 font-semibold ${note.fontSize || 'text-base'}
-                              ${moveMode || drawingMode ? 'pointer-events-none' : ''}`}
-                  disabled={moveMode || drawingMode}
-                />
-                {selectedNoteId === id && !moveMode && !drawingMode && (
-                  <>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); deleteNote(id); }}
-                        className="absolute -top-2.5 -right-2.5 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-40"
-                        title="Delete Note"
-                    > <FontAwesomeIcon icon={faXmark} size="sm"/> </button>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setColorPickerTarget('note'); setActiveColorPickerNoteId(id); setShowColorPicker(sp => !sp);}}
-                        className="absolute -bottom-2.5 -right-2.5 bg-gray-300 text-black rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-40"
-                        title="Change Note Color"
-                    > <FontAwesomeIcon icon={faPalette} size="sm"/> </button>
-                  </>
+                {note.fontSize === 'text-4xl' ? (
+                  <div className="text-4xl font-bold leading-tight truncate">{note.text}</div>
+                ) : (
+                  <textarea
+                    value={note.text}
+                    onChange={(e) => handleNoteTextChange(e, id)}
+                    className="flex-1 resize-none outline-none bg-transparent text-sm"
+                    style={{ fontSize: note.fontSize === 'text-base' ? 'inherit' : note.fontSize }}
+                    placeholder="Enter note text"
+                  />
+                )}
+                {moveMode && (
+                  <div className="absolute inset-0 bg-black opacity-0 transition-opacity group-hover:opacity-10" />
                 )}
               </div>
             );
           })}
         </div>
-      </div>
-
-      <div className="fixed bottom-4 right-4 flex items-center bg-white rounded-xl shadow-md border border-gray-200 z-50">
-        <div className="px-4 py-2 text-black text-sm font-semibold">{wordCount}/1000</div>
-        <div className="bg-blue-600 text-white px-4 py-2 rounded-r-xl font-semibold text-sm">Chars</div>
       </div>
     </div>
   );
