@@ -209,7 +209,7 @@ const handleDelete = async (noteId) => {
           >
             <div
               className="relative"
-              onClick={() => navigate('/notespage')}
+              onClick={() => navigate(`/notespage?noteId=${note.id}`)}
             >
               <img
                 alt={note.title}

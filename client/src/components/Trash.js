@@ -119,11 +119,11 @@ const Trash = () => {
               alt={note.title}
               className="rounded-lg aspect-square object-cover cursor-pointer"
               src={note.image}
-              onClick={() => navigate(`/notespage/${note.id}`)}
+              onClick={() => navigate(`/notespage?noteId=${note.id}`)}
             />
             <span
               className="text-white font-medium text-sm md:text-base cursor-pointer"
-              onClick={() => navigate(`/notespage/${note.id}`)}
+              onClick={() => navigate(`/notespage?noteId=${note.id}`)}
             >
               {note.title}
             </span>

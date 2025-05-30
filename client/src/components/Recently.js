@@ -117,7 +117,7 @@ const Recently = ({ searchTerm, sortBy }) => {
           {/* Klik gambar / judul navigasi ke NotesPage dengan membawa id */}
           <div
             className="relative"
-            onClick={() => navigate('/notespage', { state: { noteId: note.id } })}
+            onClick={() => navigate(`/notespage?noteId=${note.id}`, { state: { noteId: note.id } })}
           >
             <img
               alt={note.title}
