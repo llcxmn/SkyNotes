@@ -571,12 +571,6 @@ const NotesPage = () => {
           >
             Text Box
           </button>
-          <button onClick={() => addNote('adi_budi')} className="px-3 py-2 text-xs rounded-md hover:bg-gray-100 w-full">"Adi & Budi"</button>
-          <button onClick={() => addNote('beso')} className="px-3 py-2 text-xs rounded-md hover:bg-gray-100 w-full">"Beso"</button>
-          <button onClick={() => addNote('yusuf')} className="px-3 py-2 text-xs rounded-md hover:bg-gray-100 w-full">"Yusuf"</button>
-          <button onClick={() => addNote('ak')} className="px-3 py-2 text-xs rounded-md hover:bg-gray-100 w-full">"Ak"</button>
-          <button onClick={() => addNote('budi')} className="px-3 py-2 text-xs rounded-md hover:bg-gray-100 w-full">"Budi (label)"</button>
-          <button onClick={() => addNote('akhdan')} className="px-3 py-2 text-xs rounded-md hover:bg-gray-100 w-full">"Akhdan"</button>
 
           <div className="pt-2 border-t w-full"></div>
 
