@@ -644,6 +644,11 @@ const NotesPage = () => {
             </button>
           )}
         </div>
+              {/* Word Count */}
+      <div className="fixed bottom-10 right-10 flex items-center bg-white rounded-xl shadow-md border border-gray-200 z-50">
+        <div className="px-4 py-2 text-black text-sm font-semibold">{wordCount}/100</div>
+        <button className="bg-blue-600 text-white px-6 py-2 rounded-r-xl font-semibold">Char</button>
+      </div>
 
         <div
           ref={noteAreaRef}
@@ -662,6 +667,7 @@ const NotesPage = () => {
             onMouseUp={handleCanvasMouseUp}
             onMouseLeave={handleCanvasMouseUp} // End drawing if mouse leaves canvas
           />
+
 
           {Object.entries(notes).map(([id, note]) => {
             // Determine style: prioritize inlineStyle, fallback to Tailwind classes
