@@ -73,3 +73,45 @@ export async function deleteNote(userId, noteId) {
   });
   return client.send(command);
 }
+
+// Fetch user's note_per_day limit from the scale table
+export async function getUserScale(userId) {
+  if (!process.env.REACT_APP_DYNAMODB_TABLE_SCALE) {
+    throw new Error("REACT_APP_DYNAMODB_TABLE_SCALE is not defined in environment variables");
+  }
+  const command = new QueryCommand({
+    TableName: process.env.REACT_APP_DYNAMODB_TABLE_SCALE,
+    KeyConditionExpression: "userId = :uid",
+    ExpressionAttributeValues: {
+      ":uid": userId
+    }
+  });
+  try {
+    const response = await docClient.send(command);
+    // Assume only one item per user
+    return response.Items && response.Items.length > 0 ? response.Items[0] : null;
+  } catch (error) {
+    console.error("Error fetching user scale:", error);
+    throw error;
+  }
+}
+
+// Upsert user's note_per_day in the scale table
+export async function upsertUserScale(userId, notePerDay) {
+  if (!process.env.REACT_APP_DYNAMODB_TABLE_SCALE) {
+    throw new Error("REACT_APP_DYNAMODB_TABLE_SCALE is not defined in environment variables");
+  }
+  const command = new PutCommand({
+    TableName: process.env.REACT_APP_DYNAMODB_TABLE_SCALE,
+    Item: {
+      userId,
+      note_per_day: notePerDay
+    }
+  });
+  try {
+    return await docClient.send(command);
+  } catch (error) {
+    console.error("Error upserting user scale:", error);
+    throw error;
+  }
+}

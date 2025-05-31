@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
-import { getUserNotes, createNote } from '../lib/dynamoDB';
+import { getUserNotes, createNote, getUserScale } from '../lib/dynamoDB';
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { onAuthStateChanged } from "firebase/auth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -23,11 +23,14 @@ const AllNotes = () => {
   const [showShare, setShowShare] = React.useState(false);
 
   const [displayName, setDisplayName] = useState("");
+  const [notePerDay, setNotePerDay] = useState(null);
+  const [todayNotesCount, setTodayNotesCount] = useState(0);
   
   useEffect(() => {
-    const fetchNotes = async () => {
+    const fetchNotesAndScale = async () => {
       if (auth.currentUser) {
         try {
+          // Fetch notes
           const notes = await getUserNotes(auth.currentUser.uid);
           const formattedNotes = notes
             .filter(note => !note.deleted)
@@ -35,11 +38,25 @@ const AllNotes = () => {
               id: note.noteId,
               title: note.title,
               lastViewed: new Date(note.lastViewed),
+              createdAt: note.createdAt,
               image: note.image || 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
             }));
           setNotesData(formattedNotes);
+
+          // Count notes created today
+          const today = new Date();
+          const todayStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+          const countToday = notes.filter(note => {
+            if (!note.createdAt) return false;
+            return note.createdAt.slice(0, 10) === todayStr && !note.deleted;
+          }).length;
+          setTodayNotesCount(countToday);
+
+          // Fetch note_per_day from scale table
+          const scale = await getUserScale(auth.currentUser.uid);
+          setNotePerDay(scale && scale.note_per_day ? Number(scale.note_per_day) : null);
         } catch (error) {
-          console.error("Failed to fetch notes:", error);
+          console.error("Failed to fetch notes or scale:", error);
         } finally {
           setLoading(false);
         }
@@ -49,7 +66,7 @@ const AllNotes = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setDisplayName(user.displayName || "User");
-        fetchNotes();
+        fetchNotesAndScale();
       }
     });
 
@@ -57,52 +74,41 @@ const AllNotes = () => {
   }, []);
 
 const handleAddNote = async (e) => {
-    // 1. Add event parameter and prevent default behavior
     e.preventDefault();
     e.stopPropagation();
-    
-    console.log("Add note clicked"); // Debugging log
-
-    // 2. Enhanced auth check with redirection
     if (!auth.currentUser) {
-      console.warn("No user authenticated - redirecting to login");
       return navigate('/auth', { state: { from: '/allnotes' } });
     }
-
+    // Check note_per_day limit
+    console.log("Checking notePerDay limit:", notePerDay, "Today's notes count:", todayNotesCount, "User ID:", auth.currentUser.uid);
+    if (notePerDay !== null && todayNotesCount >= notePerDay) {
+      alert(`You have reached your daily note limit (${notePerDay}). Please try again tomorrow.`);
+      return;
+    }
     try {
-      // 3. Create new note with additional default fields
+      setLoading(true);
+      const now = new Date();
       const newNote = {
-        noteId: `note_${Date.now()}`,
+        noteId: `note_${now.getTime()}`,
         userId: auth.currentUser.uid,
         title: "Untitled Note",
         content: "",
-        lastViewed: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        lastViewed: now.toISOString(),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
         image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
       };
-
-      console.log("Creating note:", newNote); // Debugging log
-
-      // 4. Add loading state during creation
-      setLoading(true);
       await createNote(newNote);
-      
-      // 5. Optimistic UI update
       setNotesData(prev => [{
         ...newNote,
         id: newNote.noteId,
         lastViewed: new Date(newNote.lastViewed)
       }, ...prev]);
-
-      // 6. Navigate to edit the new note
+      setTodayNotesCount(c => c + 1);
       navigate(`/notespage?noteId=${newNote.noteId}`, { 
         state: { newNote: true } 
       });
-      
     } catch (error) {
-      console.error("Failed to create note:", error);
-      // 7. Error handling with user feedback
       alert("Failed to create note. Please try again.");
     } finally {
       setLoading(false);

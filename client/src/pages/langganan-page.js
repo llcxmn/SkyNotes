@@ -2,6 +2,8 @@
 import { ChevronLeft} from 'lucide-react';
 import React, {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
+import { upsertUserScale } from '../lib/dynamoDB';
+import { getAuth } from 'firebase/auth';
 
 //pop up
 const IconX = ({ size = 24, className = "" }) => (
@@ -72,8 +74,26 @@ const handleCloseModal = () => {
     setIsModalOpen(false);
 };
 
-const handleConfirmSubscription = () => {
-    console.log(`Berlangganan paket: ${selectedPackage.name}`);
+const handleConfirmSubscription = async () => {
+    // Map package to note_per_day
+    const planNotePerDay = {
+        'Free Plan': 5,
+        'Stars': 15,
+        'Orbit': 50,
+        'Boost': 99999 // Unlimited, use a very high number
+    };
+    const planName = selectedPackage.name;
+    const notePerDay = planNotePerDay[planName] || 5;
+    try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (user) {
+            await upsertUserScale(user.uid, notePerDay);
+        }
+    } catch (err) {
+        console.error('Failed to update user scaling:', err);
+        alert('Failed to update your subscription scaling. Please try again.');
+    }
     handleCloseModal(); 
     setShowThankYou(true);
 };
