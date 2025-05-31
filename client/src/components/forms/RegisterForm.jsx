@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { upsertUserScale } from '../../lib/dynamoDB';
 
 export default function RegisterForm({ onSwitchForm }) {
   const [email, setEmail] = useState("");
@@ -31,6 +32,14 @@ export default function RegisterForm({ onSwitchForm }) {
       await updateProfile(userCredential.user, {
         displayName: username,
       })
+
+      // Set note_per_day for Free Plan (5)
+      try {
+        await upsertUserScale(userCredential.user.uid, 5);
+      } catch (scaleErr) {
+        // Optionally log or toast error, but don't block registration
+        console.error('Failed to set note_per_day for new user:', scaleErr);
+      }
 
       toast.success("Register berhasil! Silahkan login.");
       onSwitchForm();
