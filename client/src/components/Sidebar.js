@@ -3,27 +3,37 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-
 import {
   faHistory,
   faTrash,
   faTableCellsLarge,
   faFolder,
   faEdit,
-
 } from '@fortawesome/free-solid-svg-icons';
-import {auth} from '../firebase'; 
+import { auth } from '../firebase'; 
+import { getUserNotes, getUserScale } from '../lib/dynamoDB';
+
 const Sidebar = () => {
    const [displayName, setDisplayName] = useState("");
+   const [totalNotes, setTotalNotes] = useState(0);
+   const [notePerDay, setNotePerDay] = useState(10); // default fallback
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setDisplayName(user.displayName || "User"); // fallback if no name
+        setDisplayName(user.displayName || "User");
+        // Fetch notes and notePerDay
+        try {
+          const notes = await getUserNotes(user.uid);
+          setTotalNotes(notes.filter(n => !n.deleted).length);
+          const scale = await getUserScale(user.uid);
+          setNotePerDay(scale && scale.note_per_day ? Number(scale.note_per_day) : 10);
+        } catch (e) {
+          // fallback to defaults
+        }
       }
     });
-
-    return () => unsubscribe(); 
+    return () => unsubscribe();
   }, []);
 
   const activeClass =
@@ -68,9 +78,12 @@ const Sidebar = () => {
           <span>Total Notes</span>
         </div>
         <div className="w-full bg-white rounded-full h-2">
-          <div className="bg-yellow-400 h-2 rounded-full" style={{ width: "20%" }}></div>
+          <div
+            className="bg-yellow-400 h-2 rounded-full"
+            style={{ width: `${Math.min((totalNotes / notePerDay) * 100, 100)}%` }}
+          ></div>
         </div>
-        <p className="text-xs font-normal text-white">2 out of 10 Notes have been used</p>
+        <p className="text-xs font-normal text-white">{totalNotes} out of {notePerDay} Notes have been used</p>
         <NavLink
           to="/pricing"
           className="bg-yellow-400 text-black font-bold rounded-lg py-3 px-6 w-max hover:bg-yellow-300 transition-colors inline-block text-center"
