@@ -9,7 +9,8 @@ import { faPlus, faSearch } from '@fortawesome/free-solid-svg-icons';
 import NoteMenu from './NoteMenu';
 import NoteDetail from './NoteDetail';
 import NoteShare from './NoteShare';
-import {auth} from '../firebase'; 
+import Swal from 'sweetalert2';
+import { auth } from '../firebase';
 
 const AllNotes = () => {
   const [notesData, setNotesData] = useState([]);
@@ -25,7 +26,7 @@ const AllNotes = () => {
   const [displayName, setDisplayName] = useState("");
   const [notePerDay, setNotePerDay] = useState(null);
   const [todayNotesCount, setTodayNotesCount] = useState(0);
-  
+
   useEffect(() => {
     const fetchNotesAndScale = async () => {
       if (auth.currentUser) {
@@ -73,7 +74,7 @@ const AllNotes = () => {
     return () => unsubscribe();
   }, []);
 
-const handleAddNote = async (e) => {
+  const handleAddNote = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!auth.currentUser) {
@@ -82,7 +83,25 @@ const handleAddNote = async (e) => {
     // Check note_per_day limit
     console.log("Checking notePerDay limit:", notePerDay, "Today's notes count:", todayNotesCount, "User ID:", auth.currentUser.uid);
     if (notePerDay !== null && todayNotesCount >= notePerDay) {
-      alert(`You have reached your daily note limit (${notePerDay}). Please try again tomorrow.`);
+      Swal.fire({
+        title: 'You have reached your daily limit 5 notes/day',
+        customClass: {
+          title: 'swal-custom-title-small'
+        },
+        icon: 'warning',
+        width: '450px',
+        showCancelButton: true,
+        confirmButtonColor: "#2563eb",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: 'Upgrade Plan',
+        cancelButtonText: 'Nanti Saja',
+        reverseButtons: true // upgrade
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/upgrade-plan');
+          window.location.href = '/pricing';
+        }
+      });
       return;
     }
     try {
@@ -105,8 +124,8 @@ const handleAddNote = async (e) => {
         lastViewed: new Date(newNote.lastViewed)
       }, ...prev]);
       setTodayNotesCount(c => c + 1);
-      navigate(`/notespage?noteId=${newNote.noteId}`, { 
-        state: { newNote: true } 
+      navigate(`/notespage?noteId=${newNote.noteId}`, {
+        state: { newNote: true }
       });
     } catch (error) {
       alert("Failed to create note. Please try again.");
@@ -126,7 +145,7 @@ const handleAddNote = async (e) => {
     await createNote(newNote);
   };
 
-const handleDelete = async (noteId) => {
+  const handleDelete = async (noteId) => {
     try {
       setLoading(true);
       await updateNote(noteId, { deleted: true });
@@ -138,7 +157,7 @@ const handleDelete = async (noteId) => {
     }
   };
 
-   const filteredNotes = notesData.filter(note =>
+  const filteredNotes = notesData.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -160,84 +179,84 @@ const handleDelete = async (noteId) => {
       )}
       {!loading && (
         <>
-      {/* Search Bar */}
-      <div className="flex justify-end">
-        <div className="flex items-center bg-white rounded-md px-4 py-2 w-full md:w-64">
-          <input
-            type="text"
-            placeholder="Search All Notes"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="outline-none flex-grow text-black placeholder-gray-400"
-          />
-          <FontAwesomeIcon icon={faSearch} className="text-gray-600 ml-0" />
-        </div>
-      </div>
-
-      {/* Title + Sort */}
-      <div className="mt-4 flex justify-between items-center mb-4">
-        <h1 className="text-white font-extrabold text-3xl md:text-4xl select-none">All Notes</h1>
-        <div className="text-white font-semibold text-sm select-none flex items-center space-x-4">
-          <span
-            onClick={() => setSortBy('name')}
-            className={`cursor-pointer ${sortBy === 'name' ? 'text-yellow-400' : 'text-white'}`}
-          >
-            Name
-          </span>
-          <span
-            onClick={() => setSortBy('lastViewed')}
-            className={`cursor-pointer ${sortBy === 'lastViewed' ? 'text-yellow-400' : 'text-white'}`}
-          >
-            Last viewed
-          </span>
-        </div>
-      </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-
-        {/* Add Notes Box */}
-        <div
-          onClick={handleAddNote}
-          className="flex flex-col space-y-2 cursor-pointer select-none"
-        >
-          <div className="bg-white rounded-lg aspect-square flex items-center justify-center">
-            <FontAwesomeIcon icon={faPlus} className="h-16 w-16 md:h-20 md:w-20 text-blue-700" />
+          {/* Search Bar */}
+          <div className="flex justify-end">
+            <div className="flex items-center bg-white rounded-md px-4 py-2 w-full md:w-64">
+              <input
+                type="text"
+                placeholder="Search All Notes"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="outline-none flex-grow text-black placeholder-gray-400"
+              />
+              <FontAwesomeIcon icon={faSearch} className="text-gray-600 ml-0" />
+            </div>
           </div>
-          <span className="text-white font-medium text-sm md:text-base">Add Notes</span>
-        </div>
 
-        {/* List Notes */}
-        {sortedNotes.map((note) => (
-          <div
-            key={note.id}
-            className="relative flex flex-col space-y-2 cursor-pointer select-none"
-          >
+          {/* Title + Sort */}
+          <div className="mt-4 flex justify-between items-center mb-4">
+            <h1 className="text-white font-extrabold text-3xl md:text-4xl select-none">All Notes</h1>
+            <div className="text-white font-semibold text-sm select-none flex items-center space-x-4">
+              <span
+                onClick={() => setSortBy('name')}
+                className={`cursor-pointer ${sortBy === 'name' ? 'text-yellow-400' : 'text-white'}`}
+              >
+                Name
+              </span>
+              <span
+                onClick={() => setSortBy('lastViewed')}
+                className={`cursor-pointer ${sortBy === 'lastViewed' ? 'text-yellow-400' : 'text-white'}`}
+              >
+                Last viewed
+              </span>
+            </div>
+          </div>
+
+          {/* Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+
+            {/* Add Notes Box */}
             <div
-              className="relative"
-              onClick={() => navigate(`/notespage?noteId=${note.id}`)}
+              onClick={handleAddNote}
+              className="flex flex-col space-y-2 cursor-pointer select-none"
             >
-              <img
-                alt={note.title}
-                className="rounded-lg aspect-square object-cover"
-                src={note.image}
-              />
+              <div className="bg-white rounded-lg aspect-square flex items-center justify-center">
+                <FontAwesomeIcon icon={faPlus} className="h-16 w-16 md:h-20 md:w-20 text-blue-700" />
+              </div>
+              <span className="text-white font-medium text-sm md:text-base">Add Notes</span>
             </div>
-            <span className="text-white font-medium text-sm md:text-base">{note.title}</span>
-            <span className="text-white text-xs md:text-sm font-light select-text">
-              {displayName} - {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam
-            </span>
-            <div className="absolute top-1 right-1">
-              <NoteMenu
-                onDelete={() => handleDelete(note.id)}
-                onDetail={() => { setSelectedNote(note); setShowDetail(true); }}
-                onShare={() => setShowShare(true)}
-              />
-            </div>
+
+            {/* List Notes */}
+            {sortedNotes.map((note) => (
+              <div
+                key={note.id}
+                className="relative flex flex-col space-y-2 cursor-pointer select-none"
+              >
+                <div
+                  className="relative"
+                  onClick={() => navigate(`/notespage?noteId=${note.id}`)}
+                >
+                  <img
+                    alt={note.title}
+                    className="rounded-lg aspect-square object-cover"
+                    src={note.image}
+                  />
+                </div>
+                <span className="text-white font-medium text-sm md:text-base">{note.title}</span>
+                <span className="text-white text-xs md:text-sm font-light select-text">
+                  {displayName} - {Math.floor((Date.now() - note.lastViewed) / 3600000)} jam
+                </span>
+                <div className="absolute top-1 right-1">
+                  <NoteMenu
+                    onDelete={() => handleDelete(note.id)}
+                    onDetail={() => { setSelectedNote(note); setShowDetail(true); }}
+                    onShare={() => setShowShare(true)}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      </>
+        </>
       )}
 
       {/* Modals */}
