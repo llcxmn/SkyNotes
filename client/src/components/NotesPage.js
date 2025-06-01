@@ -21,6 +21,7 @@ import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebase'; 
 import AllNotes from './AllNotes'; // <-- Import AllNotes for user preferences
+import Swal from 'sweetalert2';
 
 // Mock current user for single-user app
 // const currentUser = {
@@ -59,6 +60,8 @@ const NotesPage = () => {
 
   // New currentUser state
   const [currentUser, setCurrentUser] = useState({ name: "User", status: "Free", id: null });
+
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     // Use Firebase auth to get user info, fallback to AllNotes.js logic
@@ -395,21 +398,18 @@ const NotesPage = () => {
 
   const handleSave = async () => {
     if (!currentDocId || !currentUser?.id) {
-      alert("Error: No document ID or user. Cannot save.");
+      Swal.fire('Error', 'No document ID or user. Cannot save.', 'error');
       return;
     }
     const canvas = canvasRef.current;
     let drawingDataUrl = null;
-    if (canvas && canvasHistory.length > 0 && canvasHistoryStep >=0) {
-        drawingDataUrl = canvas.toDataURL('image/png');
+    if (canvas && canvasHistory.length > 0 && canvasHistoryStep >= 0) {
+      drawingDataUrl = canvas.toDataURL('image/png');
     }
     const now = new Date().toISOString();
-    // Try to preserve createdAt if it exists in the loaded doc, otherwise use now
     let createdAt = now;
     if (notes && typeof notes === 'object' && Object.keys(notes).length > 0) {
-      // Try to find createdAt from the loaded doc if available
       if (typeof window !== 'undefined' && window.localStorage) {
-        // Defensive: try to get from localStorage if ever needed (legacy)
         const storageKey = `skyNoteData_${currentDocId}`;
         const savedData = localStorage.getItem(storageKey);
         if (savedData) {
@@ -419,8 +419,6 @@ const NotesPage = () => {
           } catch {}
         }
       }
-      // Or, if you loaded the doc from DynamoDB, you could keep it in a ref/state
-      // For now, fallback to now
     }
     const dataToSave = {
       userId: currentUser.id,
@@ -433,13 +431,20 @@ const NotesPage = () => {
       createdAt,
       updatedAt: now,
       image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
-      // Add any other attributes you want to persist from AllNotes.js
     };
     try {
       await createNote(dataToSave);
-      alert(`Notes for ${currentDocId} saved to cloud!`);
+      setSaved(true); 
+      Swal.fire({
+        icon: 'success',
+        title: 'Saved!',
+        text: 'Your notes have been saved in cloud.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      setTimeout(() => setSaved(false), 2000); 
     } catch (err) {
-      alert('Failed to save note to DynamoDB.');
+      Swal.fire('Failed to Save', 'Something went wrong while saving your note.', 'error');
       console.error(err);
     }
   };
@@ -531,7 +536,7 @@ const NotesPage = () => {
         <div className="flex items-center space-x-2">
           <span className="text-sm font-semibold max-w-xs truncate">{currentUser.name}</span>
           <button onClick={handleSave} className="p-2 hover:bg-gray-100 rounded-md" title="Save Note">
-            <FontAwesomeIcon icon={faSave} />
+            <FontAwesomeIcon icon={saved ? faCheckSquare : faSave} />
           </button>
           <button
             onClick={() => { setColorPickerTarget('theme'); setShowColorPicker(sp => !sp); }}

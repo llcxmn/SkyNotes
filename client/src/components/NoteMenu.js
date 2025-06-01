@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEllipsisV } from '@fortawesome/free-solid-svg-icons';
+import Swal from 'sweetalert2';
 
 const NoteMenu = ({ onDelete, onDetail, onShare }) => {
   const [open, setOpen] = useState(false);
@@ -12,7 +13,6 @@ const NoteMenu = ({ onDelete, onDetail, onShare }) => {
           e.stopPropagation(); // Cegah klik propagate ke parent
           setOpen(!open);
         }}
-        
         className="text-white text-xl px-2 hover:bg-black hover:bg-opacity-30 rounded-full"
       >
         <FontAwesomeIcon icon={faEllipsisV} />
@@ -30,6 +30,7 @@ const NoteMenu = ({ onDelete, onDetail, onShare }) => {
           >
             Detail
           </button>
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -40,10 +41,25 @@ const NoteMenu = ({ onDelete, onDetail, onShare }) => {
           >
             Share
           </button>
+
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              Swal.fire({
+                title: 'Are you sure you want to delete this?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: "#2563eb",
+                cancelButtonColor:"#6b7280",
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No',
+                reverseButtons: true
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  onDelete(); 
+                  Swal.fire('Deleted!', 'Your note has been deleted.', 'success');
+                }
+              });
               setOpen(false);
             }}
             className="block w-full px-4 py-2 text-left hover:bg-red-100 text-red-600"

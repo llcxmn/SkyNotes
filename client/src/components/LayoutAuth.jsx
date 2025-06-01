@@ -20,7 +20,7 @@ export default function LayoutAuth({ children }) {
       </div>
 
       {/* KIRI - Mobile */}
-      <div className="block md:hidden w-full bg-gradient-to-r from-blue-900 to-blue-600 text-white flex flex-col items-center text-center px-6 py-8">
+      <div className="md:hidden w-full bg-gradient-to-r from-blue-900 to-blue-600 text-white flex flex-col items-center text-center px-6 py-8">
         <img
           src="/images/logo.png"
           alt="SkyNotes Logo"
