@@ -5,6 +5,7 @@ import { faSearch, faEllipsisV, faTrashRestore, faTrash } from '@fortawesome/fre
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebase';
 import { getUserNotes, deleteNote } from '../lib/dynamoDB';
+import Swal from 'sweetalert2';
 
 const Trash = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,7 +25,7 @@ const Trash = () => {
             const notes = await getUserNotes(user.uid);
             const trashed = notes.filter(note => note.deleted).map(note => ({
               id: note.noteId,
-              userId: note.userId || user.uid, // fallback to user.uid if missing
+              userId: note.userId || user.uid,
               title: note.title,
               lastViewed: new Date(note.lastViewed),
               image: note.image || 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg',
@@ -57,23 +58,38 @@ const Trash = () => {
   };
 
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('Yakin ingin menghapus permanen catatan ini?');
-    if (!confirmDelete) return;
-    try {
-      setLoading(true);
-      const note = trashNotes.find(n => n.id === id);
-      if (!note) throw new Error('Note not found');
-      const userId = String(note.userId);
-      const noteId = String(id);
-      if (!userId) throw new Error('No userId');
-      await deleteNote(userId, noteId);
-      setTrashNotes(prev => prev.filter(note => note.id !== id));
-    } catch (error) {
-      console.error('Permanent delete error:', error);
-      alert('Gagal menghapus catatan secara permanen. ' + (error?.message || ''));
-    } finally {
-      setLoading(false);
+    const note = trashNotes.find(n => n.id === id);
+    if (!note) {
+      Swal.fire('Error', 'Note not found.', 'error');
+      return;
     }
+
+    Swal.fire({
+      title: 'Yakin ingin menghapus permanen catatan ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor:"#6b7280",
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'No',
+      reverseButtons: true
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setLoading(true);
+          const userId = String(note.userId);
+          const noteId = String(id);
+          await deleteNote(userId, noteId);
+          setTrashNotes(prev => prev.filter(n => n.id !== id));
+          Swal.fire('Terhapus!', 'Catatan berhasil dihapus permanen.', 'success');
+        } catch (error) {
+          console.error('Permanent delete error:', error);
+          Swal.fire('Gagal!', 'Gagal menghapus catatan secara permanen.', 'error');
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   return (
