@@ -63,6 +63,7 @@ const AllNotes = () => {
           // Fetch note_per_day from scale table
           const scale = await getUserScale(auth.currentUser.uid);
           setNotePerDay(scale && scale.note_per_day ? Number(scale.note_per_day) : null);
+          setTodayNotesCount(scale && scale.used_this_day ? Number(scale.used_this_day) : 0);
         } catch (error) {
           console.error("Failed to fetch notes or scale:", error);
         } finally {
@@ -205,7 +206,7 @@ const AllNotes = () => {
 
           {/* Title + Sort */}
           <div className="mt-4 flex justify-between items-center mb-4">
-            <h1 className="text-white font-extrabold text-3xl md:text-4xl select-none">All Notes</h1>
+            <h1 className="text-white font-extrabold text-3xl md:text-4xl select-none">Recently</h1>
             <div className="text-white font-semibold text-sm select-none flex items-center space-x-4">
               <span
                 onClick={() => setSortBy('name')}
