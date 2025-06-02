@@ -44,18 +44,10 @@ const AllNotes = () => {
             }));
           setNotesData(formattedNotes);
 
-          // Count notes created today
-          const today = new Date();
-          const todayStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
-          const countToday = notes.filter(note => {
-            if (!note.createdAt) return false;
-            return note.createdAt.slice(0, 10) === todayStr && !note.deleted;
-          }).length;
-          setTodayNotesCount(countToday);
-
-          // Fetch note_per_day from scale table
+          // Fetch note_per_day and used_this_day from scale table
           const scale = await getUserScale(auth.currentUser.uid);
           setNotePerDay(scale && scale.note_per_day ? Number(scale.note_per_day) : null);
+          setTodayNotesCount(scale && scale.used_this_day ? Number(scale.used_this_day) : 0);
         } catch (error) {
           console.error("Failed to fetch notes or scale:", error);
         } finally {
@@ -80,11 +72,10 @@ const AllNotes = () => {
     if (!auth.currentUser) {
       return navigate('/auth', { state: { from: '/allnotes' } });
     }
-    // Check note_per_day limit
-    console.log("Checking notePerDay limit:", notePerDay, "Today's notes count:", todayNotesCount, "User ID:", auth.currentUser.uid);
+    // Check note_per_day limit using used_this_day
     if (notePerDay !== null && todayNotesCount >= notePerDay) {
       Swal.fire({
-        title: 'You have reached your daily limit 5 notes/day',
+        title: `You have reached your daily limit ${notePerDay} notes/day`,
         customClass: {
           title: 'swal-custom-title-small'
         },
@@ -118,6 +109,10 @@ const AllNotes = () => {
         image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
       };
       await createNote(newNote);
+      // Increment used_this_day in scale table
+      const scale = await getUserScale(auth.currentUser.uid);
+      const newUsed = (scale && scale.used_this_day ? Number(scale.used_this_day) : 0) + 1;
+      await import('../lib/dynamoDB').then(db => db.upsertUserScale(auth.currentUser.uid, scale.note_per_day, newUsed));
       setNotesData(prev => [{
         ...newNote,
         id: newNote.noteId,

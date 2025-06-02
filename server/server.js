@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
+
 const io = require('socket.io')(3001, {
     cors: {
         origin: "http://localhost:3000",
@@ -36,6 +39,7 @@ const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const cron = require('node-cron');
 
 const app = express();
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -52,6 +56,17 @@ app.post('/api/save-log', (req, res) => {
         }
         res.json({ success: true });
     });
+});
+
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const { resetAllUsedThisDay } = require('./dynamoDB');
+    const count = await resetAllUsedThisDay();
+    console.log(`[CRON] Reset used_this_day for ${count} users at ${new Date().toISOString()}`);
+  } catch (err) {
+    console.error('[CRON] Error during used_this_day reset:', err);
+  }
 });
 
 app.listen(3002, () => {

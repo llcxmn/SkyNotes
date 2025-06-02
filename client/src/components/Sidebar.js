@@ -17,6 +17,7 @@ const Sidebar = () => {
    const [displayName, setDisplayName] = useState("");
    const [totalNotes, setTotalNotes] = useState(0);
    const [notePerDay, setNotePerDay] = useState(10); // default fallback
+   const [usedThisDay, setUsedThisDay] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -28,6 +29,7 @@ const Sidebar = () => {
           setTotalNotes(notes.filter(n => !n.deleted).length);
           const scale = await getUserScale(user.uid);
           setNotePerDay(scale && scale.note_per_day ? Number(scale.note_per_day) : 10);
+          setUsedThisDay(scale && scale.used_this_day ? Number(scale.used_this_day) : 0);
         } catch (e) {
           // fallback to defaults
         }
@@ -80,10 +82,10 @@ const Sidebar = () => {
         <div className="w-full bg-white rounded-full h-2">
           <div
             className="bg-yellow-400 h-2 rounded-full"
-            style={{ width: `${Math.min((totalNotes / notePerDay) * 100, 100)}%` }}
+            style={{ width: `${Math.min((usedThisDay / notePerDay) * 100, 100)}%` }}
           ></div>
         </div>
-        <p className="text-xs font-normal text-white">{totalNotes} out of {notePerDay} Notes have been used</p>
+        <p className="text-xs font-normal text-white">{usedThisDay} out of {notePerDay} Notes have been used</p>
         <NavLink
           to="/pricing"
           className="bg-yellow-400 text-black font-bold rounded-lg py-3 px-6 w-max hover:bg-yellow-300 transition-colors inline-block text-center"
