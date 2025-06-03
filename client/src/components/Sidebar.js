@@ -66,11 +66,6 @@ const Sidebar = () => {
             <span>All Notes</span>
           </NavLink>
 
-          <NavLink to="/collaboration" className={({ isActive }) => (isActive ? activeClass : inactiveClass)}>
-            <FontAwesomeIcon icon={faFolder} />
-            <span>Collaboration</span>
-          </NavLink>
-          
         </div>
       </nav>
 
