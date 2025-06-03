@@ -85,7 +85,11 @@ const Sidebar = () => {
             style={{ width: `${Math.min((usedThisDay / notePerDay) * 100, 100)}%` }}
           ></div>
         </div>
-        <p className="text-xs font-normal text-white">{usedThisDay} out of {notePerDay} Notes have been used</p>
+        {notePerDay === 99999 ? (
+          <p className="text-xs font-normal text-white">Unlimited notes per day</p>
+        ) : (
+          <p className="text-xs font-normal text-white">{usedThisDay} out of {notePerDay} Notes have been used</p>
+        )}
         <NavLink
           to="/pricing"
           className="bg-yellow-400 text-black font-bold rounded-lg py-3 px-6 w-max hover:bg-yellow-300 transition-colors inline-block text-center"

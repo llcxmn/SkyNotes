@@ -59,6 +59,7 @@ app.post('/api/save-log', (req, res) => {
 });
 
 
+// Run resetAllUsedThisDay every 24 hours (midnight)
 cron.schedule('0 0 * * *', async () => {
   try {
     const { resetAllUsedThisDay } = require('./dynamoDB');
@@ -66,6 +67,17 @@ cron.schedule('0 0 * * *', async () => {
     console.log(`[CRON] Reset used_this_day for ${count} users at ${new Date().toISOString()}`);
   } catch (err) {
     console.error('[CRON] Error during used_this_day reset:', err);
+  }
+});
+
+// Run deleteOldTrashedNotes every 7 days (Sunday at midnight)
+cron.schedule('0 0 * * 0', async () => {
+  try {
+    const { deleteOldTrashedNotes } = require('./dynamoDB');
+    const deleted = await deleteOldTrashedNotes();
+    console.log(`[CRON] Deleted ${deleted} trashed notes at ${new Date().toISOString()}`);
+  } catch (err) {
+    console.error('[CRON] Error during trash cleanup:', err);
   }
 });
 
