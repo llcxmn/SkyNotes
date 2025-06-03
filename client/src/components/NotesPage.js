@@ -845,7 +845,6 @@ const NotesPage = () => {
             Real-time Chat
           </h2>
           <p className={`text-sm text-center mb-4 ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
-            Socket Status: {isConnected ? 'Connected' : 'Disconnected'}
           </p>
           <div className="flex-1 overflow-y-auto mb-4 p-2 border border-gray-200 rounded-md bg-gray-50 flex flex-col-reverse">
             {chatMessages.slice().reverse().map((msg) => ( // Reverse to show latest at bottom

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faEllipsisV, faTrashRestore, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebase';
-import { getUserNotes, deleteNote } from '../lib/dynamoDB';
+import { getUserNotes, deleteNote, logNoteAction } from '../lib/dynamoDB';
 import Swal from 'sweetalert2';
 
 const Trash = () => {
@@ -80,6 +80,7 @@ const Trash = () => {
           const userId = String(note.userId);
           const noteId = String(id);
           await deleteNote(userId, noteId);
+          await logNoteAction({ userId, noteId, action: 'delete', noteData: note });
           setTrashNotes(prev => prev.filter(n => n.id !== id));
           Swal.fire('Terhapus!', 'Catatan berhasil dihapus permanen.', 'success');
         } catch (error) {
