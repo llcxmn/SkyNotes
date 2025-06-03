@@ -77,7 +77,7 @@ const Sidebar = () => {
       <div className="flex flex-col space-y-4">
         <div className="flex items-center space-x-2 font-semibold text-white text-lg">
           <FontAwesomeIcon icon={faEdit} />
-          <span>Total Notes</span>
+          <span>Today's Notes</span>
         </div>
         <div className="w-full bg-white rounded-full h-2">
           <div

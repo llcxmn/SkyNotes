@@ -2,8 +2,8 @@
 import { ChevronLeft} from 'lucide-react';
 import React, {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { upsertUserScale } from '../lib/dynamoDB';
 import { getAuth } from 'firebase/auth';
+import { getUserScale, upsertUserScale } from '../lib/dynamoDB';
 
 //pop up
 const IconX = ({ size = 24, className = "" }) => (
@@ -88,7 +88,16 @@ const handleConfirmSubscription = async () => {
         const auth = getAuth();
         const user = auth.currentUser;
         if (user) {
-            await upsertUserScale(user.uid, notePerDay);
+            // Fetch current used_this_day to avoid resetting it
+            let usedThisDay = 0;
+            try {
+                const scale = await getUserScale(user.uid);
+                usedThisDay = scale && scale.used_this_day ? Number(scale.used_this_day) : 0;
+            } catch (e) {
+                // fallback to 0 if error
+                usedThisDay = 0;
+            }
+            await upsertUserScale(user.uid, notePerDay, usedThisDay);
         }
     } catch (err) {
         console.error('Failed to update user scaling:', err);
@@ -179,7 +188,7 @@ const handleStartFreePlan = () => {
                         </div>
                         <div className='flex flex-col text-white justify-center items-center'>
                             <h1 className='font-extrabold text-[1em]'>Rp10,000</h1>
-                            <p className='text-[0.8rem]'>/ month</p>
+                            <p className='text-[0.8rem]'></p>
                         </div>
                         <button onClick={() => handleOpenModal("Stars", "Rp10,000")}
                         className='px-5 py-1 font-bold bg-yellow-300 rounded-lg hover:bg-white hover:text-black'>Subscribe</button>
@@ -218,7 +227,7 @@ const handleStartFreePlan = () => {
                         </div>
                         <div className='flex flex-col text-white justify-center items-center'>
                             <h1 className='font-extrabold text-[1em]'>Rp25,000</h1>
-                            <p className='text-[0.8rem]'>/ month</p>
+                            <p className='text-[0.8rem]'></p>
                         </div>
                         <button onClick={() => handleOpenModal("Orbit", "Rp25,000")}
                         className='px-5 py-1 font-bold bg-yellow-300 rounded-lg hover:bg-white hover:text-black'>Subscribe</button>
@@ -257,7 +266,7 @@ const handleStartFreePlan = () => {
                         </div>
                         <div className='flex flex-col text-white justify-center items-center'>
                             <h1 className='font-extrabold text-[1em]'>Rp50,000</h1>
-                            <p className='text-[0.8rem]'>/ month</p>
+                            <p className='text-[0.8rem]'></p>
                         </div>
                         <button onClick={() => handleOpenModal("Boost", "Rp50,000")}
                         className='px-5 py-1 font-bold bg-yellow-300 rounded-lg hover:bg-white hover:text-black'>Subscribe</button>
@@ -299,7 +308,7 @@ const handleStartFreePlan = () => {
             <div className="text-center">
             <p className="text-sm text-gray-600 mb-6">
                 You will subscribe to the  
-                <strong> {selectedPackage.name} Package </strong> for <strong>{selectedPackage.price} /month</strong>. Continue?
+                <strong> {selectedPackage.name} Package </strong> for <strong>{selectedPackage.price}</strong>. Continue?
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
                 <button

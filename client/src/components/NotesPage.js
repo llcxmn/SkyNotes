@@ -838,8 +838,8 @@ const NotesPage = () => {
             );
           })}
         </div>
-
-        {/* Right Sidebar - Chat */}
+        
+        {/* Right Sidebar - Chat
         <div className="flex flex-col flex-1 bg-white p-6 rounded-lg shadow-md max-h-[calc(100vh-2rem)] md:max-h-full">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
             Real-time Chat
@@ -875,7 +875,7 @@ const NotesPage = () => {
               Send
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Word Count */}
