@@ -116,3 +116,28 @@ export async function upsertUserScale(userId, notePerDay, usedThisDay) {
     throw error;
   }
 }
+
+// Log note actions (creation, update, deletion) to the logs table
+export async function logNoteAction({ userId, noteId, action, noteData }) {
+  if (!process.env.REACT_APP_DYNAMODB_TABLE_LOGS) {
+    throw new Error("REACT_APP_DYNAMODB_TABLE_LOGS is not defined in environment variables");
+  }
+  const logItem = {
+    userId: String(userId), // Partition key
+    logId: `${action}_${noteId}_${Date.now()}`,
+    noteId: String(noteId),
+    action, // 'create', 'update', 'delete'
+    timestamp: new Date().toISOString(),
+    noteData: noteData ? JSON.stringify(noteData) : null
+  };
+  const command = new PutCommand({
+    TableName: process.env.REACT_APP_DYNAMODB_TABLE_LOGS,
+    Item: logItem
+  });
+  try {
+    return await docClient.send(command);
+  } catch (error) {
+    console.error("Error logging note action:", error);
+    // Don't throw, logging should not block main flow
+  }
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
-import { getUserNotes, createNote, getUserScale } from '../lib/dynamoDB';
+import { getUserNotes, createNote, getUserScale, logNoteAction } from '../lib/dynamoDB';
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { onAuthStateChanged } from "firebase/auth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -109,6 +109,7 @@ const AllNotes = () => {
         image: 'https://storage.googleapis.com/a1aa/image/be8802ad-74c0-4848-694a-ece413157a5b.jpg'
       };
       await createNote(newNote);
+      await logNoteAction({ userId: newNote.userId, noteId: newNote.noteId, action: 'create', noteData: newNote });
       // Increment used_this_day in scale table
       const scale = await getUserScale(auth.currentUser.uid);
       const newUsed = (scale && scale.used_this_day ? Number(scale.used_this_day) : 0) + 1;
@@ -138,12 +139,14 @@ const AllNotes = () => {
     if (!fullNote) return;
     const newNote = { ...fullNote, ...updates, userId, noteId };
     await createNote(newNote);
+    await logNoteAction({ userId, noteId, action: 'update', noteData: newNote });
   };
 
   const handleDelete = async (noteId) => {
     try {
       setLoading(true);
       await updateNote(noteId, { deleted: true });
+      await logNoteAction({ userId: auth.currentUser.uid, noteId, action: 'delete' });
       setNotesData(prev => prev.filter(note => note.id !== noteId));
     } catch (error) {
       alert("Failed to move note to trash.");

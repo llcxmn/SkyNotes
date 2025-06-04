@@ -66,18 +66,13 @@ const Sidebar = () => {
             <span>All Notes</span>
           </NavLink>
 
-          <NavLink to="/collaboration" className={({ isActive }) => (isActive ? activeClass : inactiveClass)}>
-            <FontAwesomeIcon icon={faFolder} />
-            <span>Collaboration</span>
-          </NavLink>
-          
         </div>
       </nav>
 
       <div className="flex flex-col space-y-4">
         <div className="flex items-center space-x-2 font-semibold text-white text-lg">
           <FontAwesomeIcon icon={faEdit} />
-          <span>Total Notes</span>
+          <span>Today's Notes</span>
         </div>
         <div className="w-full bg-white rounded-full h-2">
           <div
@@ -85,7 +80,11 @@ const Sidebar = () => {
             style={{ width: `${Math.min((usedThisDay / notePerDay) * 100, 100)}%` }}
           ></div>
         </div>
-        <p className="text-xs font-normal text-white">{usedThisDay} out of {notePerDay} Notes have been used</p>
+        {notePerDay === 99999 ? (
+          <p className="text-xs font-normal text-white">Unlimited notes per day</p>
+        ) : (
+          <p className="text-xs font-normal text-white">{usedThisDay} out of {notePerDay} Notes have been used</p>
+        )}
         <NavLink
           to="/pricing"
           className="bg-yellow-400 text-black font-bold rounded-lg py-3 px-6 w-max hover:bg-yellow-300 transition-colors inline-block text-center"
