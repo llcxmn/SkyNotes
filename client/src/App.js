@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage';
 import LanggananPage from "./pages/langganan-page";
 import AuthPage from './pages/Auth';
 import UserProfile from './pages/UserProfile';
+import BillingPage from './pages/BillingPage';
 
 // Components
 import Navbar from './components/Navbar';
@@ -22,7 +23,7 @@ import Collaboration from './components/Collaboration';
 import MainLayout from './components/MainLayout';
 import NotesPageCollaboration from './components/NotesPageCollaboration';
 import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from './components/ProtectedRoute'; 
+import ProtectedRoute from './components/ProtectedRoute';
 
 
 const App = () => {
@@ -38,6 +39,15 @@ const App = () => {
           {/* Auth Routes */}
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/profile" element={<UserProfile />} />
+
+          <Route
+            path="/billing"
+            element={
+              <ProtectedRoute>
+                <BillingPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected Routes */}
           <Route
