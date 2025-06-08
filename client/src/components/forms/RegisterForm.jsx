@@ -35,7 +35,7 @@ export default function RegisterForm({ onSwitchForm }) {
 
       // Set note_per_day for Free Plan (5)
       try {
-        await upsertUserScale(userCredential.user.uid, 5, 0);
+        await upsertUserScale(userCredential.user.uid, 5, 0, 100);
       } catch (scaleErr) {
         // Optionally log or toast error, but don't block registration
         console.error('Failed to set note_per_day for new user:', scaleErr);

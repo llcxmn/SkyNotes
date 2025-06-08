@@ -1,20 +1,40 @@
 import { useEffect, useRef, useState } from "react";
-import {onAuthStateChanged, updatePassword, signOut, deleteUser } from "firebase/auth";
+import { onAuthStateChanged, updatePassword, signOut, deleteUser } from "firebase/auth";
 import { auth } from "../firebase";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import HeaderPrivate from "../components/headers/HeaderPrivate";
+import { getUserScale } from "../lib/dynamoDB";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [previewURL, setPreviewURL] = useState("");
+  const [planName, setPlanName] = useState("");
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        try {
+          const scale = await getUserScale(currentUser.uid);
+          // Determine plan name based on note_per_day and word_limit
+          if (scale) {
+            if (scale.note_per_day >= 99999 || scale.word_limit >= 999999) setPlanName("Boost");
+            else if (scale.note_per_day >= 50 && scale.word_limit >= 500) setPlanName("Orbit");
+            else if (scale.note_per_day >= 15 && scale.word_limit >= 250) setPlanName("Stars");
+            else setPlanName("Free Plan");
+          } else {
+            setPlanName("Free Plan");
+          }
+        } catch {
+          setPlanName("Free Plan");
+        }
+      } else {
+        setPlanName("");
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -204,7 +224,8 @@ export default function UserProfile() {
                 <label className="block text-gray-700 font-medium mb-1">Status Langganan</label>
                 <input
                   type="text"
-                  placeholder="Premium / Free"
+                  value={planName}
+                  readOnly
                   className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                 />
               </div>

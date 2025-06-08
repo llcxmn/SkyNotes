@@ -97,7 +97,7 @@ export async function getUserScale(userId) {
 }
 
 // Upsert user's note_per_day and used_this_day in the scale table
-export async function upsertUserScale(userId, notePerDay, usedThisDay) {
+export async function upsertUserScale(userId, notePerDay, usedThisDay, wordLimit) {
   if (!process.env.REACT_APP_DYNAMODB_TABLE_SCALE) {
     throw new Error("REACT_APP_DYNAMODB_TABLE_SCALE is not defined in environment variables");
   }
@@ -106,7 +106,8 @@ export async function upsertUserScale(userId, notePerDay, usedThisDay) {
     Item: {
       userId,
       note_per_day: notePerDay,
-      used_this_day: usedThisDay
+      used_this_day: usedThisDay,
+      word_limit: wordLimit
     }
   });
   try {

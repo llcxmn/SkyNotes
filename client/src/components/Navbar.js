@@ -26,7 +26,7 @@ const Navbar = () => {
         <div className="flex items-center gap-6">
           {/* Desktop Menu */}
           <ul className="hidden md:flex space-x-6 text-white font-semibold text-base select-none">
-            <li><Link to="/" className="hover:underline">Home</Link></li>
+            <li><Link to="/dashboard" className="hover:underline">Home</Link></li>
             <li><Link to="/pricing" className="hover:underline">Pricing</Link></li>
             <li><Link to="/contact" className="hover:underline">Contact</Link></li>
           </ul>
@@ -53,7 +53,7 @@ const Navbar = () => {
       {/* Mobile Dropdown */}
       {isOpen && (
         <ul className="md:hidden mt-4 space-y-2 text-white font-semibold text-base">
-          <li><Link to="/" className="hover:underline">Home</Link></li>
+          <li><Link to="/dashboard" className="hover:underline">Home</Link></li>
           <li><Link to="/pricing" className="hover:underline">Pricing</Link></li>
           <li><Link to="/contact" className="hover:underline">Contact</Link></li>
         </ul>

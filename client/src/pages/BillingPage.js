@@ -44,8 +44,12 @@ const BillingPage = () => {
         const planNotePerDay = {
             'Free Plan': 5, 'Stars': 15, 'Orbit': 50, 'Boost': 99999
         };
+        const planWordLimit = {
+            'Free Plan': 100, 'Stars': 250, 'Orbit': 500, 'Boost': 999999
+        };
         const planName = selectedPackage.name;
         const notePerDay = planNotePerDay[planName] || 5;
+        const wordLimit = planWordLimit[planName] || 100;
 
         try {
             const auth = getAuth();
@@ -58,7 +62,7 @@ const BillingPage = () => {
                 } catch (e) {
                     usedThisDay = 0;
                 }
-                await upsertUserScale(user.uid, notePerDay, usedThisDay);
+                await upsertUserScale(user.uid, notePerDay, usedThisDay, wordLimit);
             }
         } catch (err) {
             console.error('Failed to update user scaling:', err);

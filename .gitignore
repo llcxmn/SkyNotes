@@ -1,2 +1,7 @@
 /node_modules
 notes.txt
+/client/node_modules
+.env
+/client/.env
+/server/.env
+/server/node_modules

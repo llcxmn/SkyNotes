@@ -16,7 +16,7 @@ import {
   faPalette
 } from '@fortawesome/free-solid-svg-icons';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
-import { getUserNotes, createNote } from '../lib/dynamoDB'; // Assuming these are correctly implemented
+import { getUserNotes, createNote, getUserScale } from '../lib/dynamoDB'; // Import getUserScale
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebase'; // Assuming firebase.js exports 'auth'
 import Swal from 'sweetalert2'; // For alerts
@@ -34,6 +34,7 @@ const NotesPage = () => {
   const [notes, setNotes] = useState({}); // Notes stored as an object { id: noteData }
   const [themeColor, setThemeColor] = useState("#fde6e6");
   const [wordCount, setWordCount] = useState(0);
+  const [wordLimit, setWordLimit] = useState(100); // Default to 100, will be updated
 
   const [drawingMode, setDrawingMode] = useState(false);
   const [drawTool, setDrawTool] = useState('pencil');
@@ -66,15 +67,27 @@ const NotesPage = () => {
   // --- Firebase Authentication Effect ---
   useEffect(() => {
     // Use Firebase auth to get user info
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser({
           name: user.displayName || "User",
           status: "Free", // Default status, you might fetch this from a user profile in DB
           id: user.uid
         });
+        // Fetch word limit from DynamoDB scale table
+        try {
+          const scale = await getUserScale(user.uid);
+          if (scale && scale.word_limit) {
+            setWordLimit(Number(scale.word_limit));
+          } else {
+            setWordLimit(100); // fallback
+          }
+        } catch {
+          setWordLimit(100);
+        }
       } else {
         setCurrentUser({ name: "Guest", status: "Free", id: null });
+        setWordLimit(100);
       }
     });
     return () => unsubscribe();
@@ -811,10 +824,15 @@ const NotesPage = () => {
                 ) : (
                   <textarea
                     value={note.text}
-                    onChange={(e) => handleNoteTextChange(e, id)}
+                    onChange={(e) => {
+                      // Prevent typing if wordCount >= wordLimit
+                      if (wordCount >= wordLimit && e.target.value.length > (note.text ? note.text.length : 0)) return;
+                      handleNoteTextChange(e, id);
+                    }}
                     className="flex-1 resize-none outline-none bg-transparent text-sm"
                     style={{ fontSize: note.fontSize === 'text-base' ? 'inherit' : note.fontSize }}
                     placeholder="Enter note text"
+                    maxLength={wordLimit}
                   />
                 )}
                 {selectedNoteId === id && !drawingMode && (
@@ -880,7 +898,7 @@ const NotesPage = () => {
 
       {/* Word Count */}
       <div className="fixed bottom-10 right-10 flex items-center bg-white rounded-xl shadow-md border border-gray-200 z-50">
-        <div className="px-4 py-2 text-black text-sm font-semibold">{wordCount}/100</div>
+        <div className="px-4 py-2 text-black text-sm font-semibold">{wordCount}/{wordLimit}</div>
         <button className="bg-blue-600 text-white px-6 py-2 rounded-r-xl font-semibold">Char</button>
       </div>
     </div>
