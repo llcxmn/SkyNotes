@@ -1,6 +1,6 @@
 # SkyNotes
 
-SkyNotes is a modern, collaborative cloud-based note-taking platform. It allows users to create, edit, and organize notes with real-time collaboration, drawing tools, and customizable themes. The app supports user authentication, subscription plans, and integrates with AWS DynamoDB for scalable cloud storage.
+SkyNotes as (Software as A Service) is a modern, collaborative cloud-based note-taking platform. It allows users to create, edit, and organize notes with real-time collaboration, drawing tools, and customizable themes. The app supports user authentication, subscription plans, and integrates with AWS DynamoDB for scalable cloud storage. 
 
 ## Features
 - **Rich Note Editing**: Create and edit sticky notes with text, colors, and drag-and-drop positioning.
